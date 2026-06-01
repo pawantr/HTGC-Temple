@@ -134,24 +134,24 @@ select option{background:#fff;color:#1a0805;}
 .ticket::before{content:'';position:absolute;inset:0;
   background:radial-gradient(ellipse 70% 50% at 50% 0%,rgba(180,100,20,.18) 0%,transparent 65%);
   pointer-events:none;}
-.ticket-top{padding:1.1rem 1.3rem .8rem;border-bottom:1px dashed rgba(201,151,58,.25);position:relative;}
-.t-org{font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.18em;color:var(--gold);
+.ticket-top{padding:1.1rem 130px 0.8rem 1.3rem;border-bottom:1px dashed rgba(201,151,58,.25);position:relative;}
+.t-org{font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.1em;color:var(--gold);
   text-transform:uppercase;margin-bottom:.12rem;}
-.t-event{font-family:'Cinzel',serif;font-size:clamp(1rem,3vw,1.4rem);font-weight:900;
+.t-event{font-family:'Cinzel',serif;font-size:clamp(1.1rem,3vw,1.6rem);font-weight:900;
   background:linear-gradient(90deg,var(--gold-pale),var(--gold-light));
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1;}
 .t-tagline{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:.78rem;
   color:rgba(247,232,176,.5);margin-top:.08rem;}
-.t-datetime{position:absolute;top:1.1rem;right:1.3rem;text-align:right;}
-.t-date{font-family:'Cinzel',serif;font-size:.62rem;color:var(--gold);letter-spacing:.1em;}
-.t-time{font-size:1.2rem;font-weight:700;color:var(--cream);line-height:1;}
+.t-datetime{position:absolute;top:1rem;right:1.2rem;text-align:right;max-width:110px;}
+.t-date{font-family:'Cinzel',serif;font-size:.65rem;color:var(--gold);letter-spacing:.06em;}
+.t-time{font-size:1.3rem;font-weight:700;color:#fff;line-height:1.1;}
 .ticket-body{padding:.9rem 1.3rem;}
 .t-venue{font-size:.74rem;color:rgba(247,232,176,.55);margin-bottom:.7rem;}
 .t-venue strong{color:var(--gold-light);font-size:.76rem;display:block;letter-spacing:.08em;text-transform:uppercase;}
-.t-fields{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.6rem;margin-bottom:.8rem;}
-.t-field label{font-size:.56rem;letter-spacing:.15em;color:rgba(247,232,176,.4);text-transform:uppercase;display:block;margin-bottom:.08rem;}
-.t-field .val{font-size:.85rem;font-weight:600;color:var(--cream);}
-.t-field .val.hl{color:var(--gold-light);font-family:'Cinzel',serif;font-size:.78rem;}
+.t-fields{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:.8rem;}
+.t-field label{font-size:.62rem;letter-spacing:.12em;color:rgba(247,232,176,.5);text-transform:uppercase;display:block;margin-bottom:.15rem;}
+.t-field .val{font-size:1rem;font-weight:700;color:#fff;word-break:break-all;}
+.t-field .val.hl{color:var(--gold-light);font-family:'Cinzel',serif;font-size:.95rem;letter-spacing:.05em;}
 .ticket-bottom{display:flex;align-items:center;justify-content:space-between;
   padding:.8rem 1.3rem;border-top:1px dashed rgba(201,151,58,.25);background:rgba(0,0,0,.2);}
 .t-qr{background:white;padding:5px;border-radius:5px;}
@@ -291,10 +291,10 @@ tr:hover td{background:rgba(200,140,0,.06);}
               10915 Lemont Rd, Lemont, IL 60439 &nbsp;·&nbsp; Doors open 3:30 PM
             </div>
             <div class="t-fields">
-              <div class="t-field"><label>Name</label><div class="val" id="t-name">—</div></div>
+              <div class="t-field"><label>Name</label><div class="val" id="t-name" style="font-size:1rem;">—</div></div>
               <div class="t-field"><label>Seat</label><div class="val hl" id="t-seat">—</div></div>
-              <div class="t-field"><label>Ticket #</label><div class="val" id="t-num" style="font-size:.72rem">—</div></div>
             </div>
+            <div style="margin-bottom:.6rem;"><span style="font-size:.58rem;letter-spacing:.12em;color:rgba(247,232,176,.45);text-transform:uppercase;">Ticket ID &nbsp;</span><span id="t-num" style="font-size:.72rem;color:rgba(247,232,176,.7);font-family:monospace;letter-spacing:.04em;">—</span></div>
           </div>
           <div class="ticket-bottom">
             <div class="t-qr" id="qr-container"></div>
@@ -551,11 +551,20 @@ function generateTicket() {
 
   const qrContainer = document.getElementById('qr-container');
   qrContainer.innerHTML = '';
+  // Clean readable QR text — no JSON, no Google search
+  const qrText = [
+    'CHAITANYA 2026 - HTGC',
+    'Ticket: ' + ticketNum,
+    'Name: ' + name,
+    'Seat: ' + seatRaw,
+    'Tier: ' + cfg.label,
+    'Confirm: ' + confirm
+  ].join('\n');
   new QRCode(qrContainer, {
-    text: JSON.stringify({id:ticketNum,name,seat:seatRaw,tier,event:'Chaitanya2026'}),
-    width:85, height:85,
+    text: qrText,
+    width:90, height:90,
     colorDark:'#000000', colorLight:'#ffffff',
-    correctLevel: QRCode.CorrectLevel.H
+    correctLevel: QRCode.CorrectLevel.M
   });
 
   document.getElementById('ticket-placeholder').style.display = 'none';
