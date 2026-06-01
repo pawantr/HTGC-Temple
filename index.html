@@ -342,7 +342,7 @@ tr:hover td{background:rgba(200,140,0,.06);}
               <div class="t-field"><label>Name</label><div class="val" id="t-name" style="font-size:1rem;">—</div></div>
               <div class="t-field"><label>Seat</label><div class="val hl" id="t-seat">—</div></div>
             </div>
-            <div style="margin-bottom:.6rem;"><span style="font-size:.62rem;letter-spacing:.1em;color:#7a5020;text-transform:uppercase;font-weight:700;">Ticket ID &nbsp;</span><span id="t-num" style="font-size:.75rem;color:#3a1800;font-family:monospace;letter-spacing:.04em;font-weight:700;">—</span></div>
+            <div id="t-zone-banner" style="margin-bottom:.6rem;display:inline-block;padding:.3rem 1rem;border-radius:6px;font-family:'Cinzel',serif;font-size:.82rem;font-weight:700;letter-spacing:.1em;">SEATING ZONE</div>
           </div>
           <div class="ticket-bottom">
             <div class="t-qr" id="qr-container"></div>
@@ -404,6 +404,16 @@ SEATS_RAW.forEach(s => { seatMap[s["Seat ID"]] = s; });
 let registry = [];
 let ticketCounter = 1;
 let selectedSeatId = null;
+
+// ═══ ZONE MAP ═══
+
+const ZONE_MAP = {
+  "$1,000 & Above": { name: "Brown Zone",  color: "#5a1a00", bg: "#c8860a", textColor: "#fff" },
+  "$500 Sponsor":   { name: "Amber Zone",  color: "#3a2000", bg: "#b87820", textColor: "#fff" },
+  "$100 Ticket":    { name: "Green Zone",  color: "#0a2a0a", bg: "#2a7a2a", textColor: "#fff" },
+  "$50 Ticket":     { name: "Blue Zone",   color: "#0a1a3a", bg: "#2a4a9a", textColor: "#fff" },
+  "$25 Ticket":     { name: "Silver Zone", color: "#2a2a2a", bg: "#6a6a7a", textColor: "#fff" },
+};
 
 // ═══ TIER CONFIG ═══
 const TIER_CFG = {
@@ -597,12 +607,19 @@ function generateTicket() {
   const seqNum = String(ticketCounter).padStart(4,'0');
   const confirm = 'CH26-' + seqNum;
 
+  const zone = ZONE_MAP[tier] || { name: "General Zone", bg: "#6a6a7a", textColor: "#fff" };
+
   document.getElementById('t-name').textContent = name;
   document.getElementById('t-seat').textContent = seatRaw;
-  document.getElementById('t-num').textContent = ticketNum;
   document.getElementById('t-confirm').textContent = confirm;
   document.getElementById('t-badge-wrap').innerHTML =
     `<span class="t-badge ${cfg.badge}">${cfg.label}</span>`;
+
+  // Zone banner on ticket face (replaces ticket #)
+  const zoneBanner = document.getElementById('t-zone-banner');
+  zoneBanner.textContent = 'SEATING · ' + zone.name.toUpperCase();
+  zoneBanner.style.background = zone.bg;
+  zoneBanner.style.color = zone.textColor;
 
   const qrContainer = document.getElementById('qr-container');
   qrContainer.innerHTML = '';
@@ -632,8 +649,9 @@ function generateTicket() {
 function addToRegistry() {
   if (!window._pendingTicket) { alert('Generate a ticket first.'); return; }
   const t = window._pendingTicket;
-  if (registry.find(r => r.num === t.num)) { alert('Already added!'); return; }
+  if (registry.find(r => r.num === t.num)) { alert('Already added to registry!'); return; }
   registry.push(t);
+  console.log('Registry now has', registry.length, 'tickets');
 
   // Mark seat as booked in local data
   const seatData = seatMap[t.seat];
@@ -661,11 +679,11 @@ function renderRegistry() {
   tbody.innerHTML = registry.map((r,i) => `
     <tr>
       <td>${i+1}</td>
-      <td style="font-size:.7rem;font-family:monospace;color:var(--gold-light)">${r.num}</td>
-      <td>${r.name}</td>
-      <td><strong style="color:var(--gold-light)">${r.seat}</strong></td>
-      <td>${r.tier}</td>
-      <td style="font-size:.75rem;color:rgba(247,232,176,.5)">${r.email||'—'}</td>
+      <td style="font-size:.7rem;font-family:monospace;color:#7a5020">${r.num}</td>
+      <td style="font-weight:700;color:#1a0805">${r.name}</td>
+      <td><strong style="color:#7a3000;font-family:'Cinzel',serif">${r.seat}</strong></td>
+      <td style="color:#5a3010">${r.tier}</td>
+      <td style="font-size:.75rem;color:#7a5030">${r.email||'—'}</td>
       <td><span class="dot dot-ok"></span>Issued</td>
     </tr>`).join('');
   document.getElementById('reg-count').textContent = registry.length + ' ticket(s) issued';
