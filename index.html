@@ -128,37 +128,35 @@ select option{background:#fff;color:#1a0805;}
   color:#7a5030;font-family:'Cormorant Garamond',serif;font-style:italic;gap:.4rem;font-size:1.1rem;}
 #ticket-output{display:none;}
 .ticket{border-radius:14px;overflow:hidden;position:relative;
-  background:linear-gradient(160deg,#0d1640 0%,#1a0d35 40%,#200a10 100%);
-  border:1px solid rgba(201,151,58,.35);
-  box-shadow:0 8px 40px rgba(0,0,0,.6),inset 0 1px 0 rgba(201,151,58,.15);}
-.ticket::before{content:'';position:absolute;inset:0;
-  background:radial-gradient(ellipse 70% 50% at 50% 0%,rgba(180,100,20,.18) 0%,transparent 65%);
-  pointer-events:none;}
-.ticket-top{padding:1.1rem 130px 0.8rem 1.3rem;border-bottom:1px dashed rgba(201,151,58,.25);position:relative;}
+  background:linear-gradient(160deg,#fffaf0 0%,#fdf3dc 60%,#faebd0 100%);
+  border:2px solid #c9973a;
+  box-shadow:0 4px 24px rgba(100,60,0,.18);}
+.ticket::before{display:none;}
+.ticket-top{padding:1.1rem 130px 0.8rem 1.3rem;border-bottom:2px dashed rgba(150,90,0,.25);position:relative;background:linear-gradient(135deg,#3a0a10 0%,#1a0530 100%);border-radius:12px 12px 0 0;}
 .t-org{font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.1em;color:var(--gold);
   text-transform:uppercase;margin-bottom:.12rem;}
 .t-event{font-family:'Cinzel',serif;font-size:clamp(1.1rem,3vw,1.6rem);font-weight:900;
   background:linear-gradient(90deg,var(--gold-pale),var(--gold-light));
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1;}
-.t-tagline{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:.78rem;
-  color:rgba(247,232,176,.5);margin-top:.08rem;}
+.t-tagline{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:.82rem;
+  color:rgba(255,235,180,.75);margin-top:.08rem;}
 .t-datetime{position:absolute;top:1rem;right:1.2rem;text-align:right;max-width:110px;}
 .t-date{font-family:'Cinzel',serif;font-size:.65rem;color:var(--gold);letter-spacing:.06em;}
-.t-time{font-size:1.3rem;font-weight:700;color:#fff;line-height:1.1;}
-.ticket-body{padding:.9rem 1.3rem;}
-.t-venue{font-size:.74rem;color:rgba(247,232,176,.55);margin-bottom:.7rem;}
-.t-venue strong{color:var(--gold-light);font-size:.76rem;display:block;letter-spacing:.08em;text-transform:uppercase;}
+.t-time{font-size:1.3rem;font-weight:700;color:#fff;line-height:1.1;text-shadow:0 1px 3px rgba(0,0,0,.3);}
+.ticket-body{padding:.9rem 1.3rem;background:#fffaf0;}
+.t-venue{font-size:.78rem;color:#4a2a08;margin-bottom:.7rem;}
+.t-venue strong{color:#7a3a00;font-size:.8rem;display:block;letter-spacing:.08em;text-transform:uppercase;font-weight:800;}
 .t-fields{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:.8rem;}
-.t-field label{font-size:.62rem;letter-spacing:.12em;color:rgba(247,232,176,.5);text-transform:uppercase;display:block;margin-bottom:.15rem;}
-.t-field .val{font-size:1rem;font-weight:700;color:#fff;word-break:break-all;}
-.t-field .val.hl{color:var(--gold-light);font-family:'Cinzel',serif;font-size:.95rem;letter-spacing:.05em;}
+.t-field label{font-size:.65rem;letter-spacing:.1em;color:#7a5020;text-transform:uppercase;display:block;margin-bottom:.15rem;font-weight:700;}
+.t-field .val{font-size:1.05rem;font-weight:800;color:#1a0805;word-break:break-all;}
+.t-field .val.hl{color:#7a3000;font-family:'Cinzel',serif;font-size:1rem;letter-spacing:.05em;font-weight:800;}
 .ticket-bottom{display:flex;align-items:center;justify-content:space-between;
-  padding:.8rem 1.3rem;border-top:1px dashed rgba(201,151,58,.25);background:rgba(0,0,0,.2);}
+  padding:.8rem 1.3rem;border-top:2px dashed rgba(150,90,0,.25);background:#fdf0d0;}
 .t-qr{background:white;padding:5px;border-radius:5px;}
 .t-qr canvas,t-qr img{display:block;}
 .t-info{flex:1;padding-left:1rem;}
-.t-info .lbl{font-size:.56rem;letter-spacing:.12em;color:rgba(247,232,176,.4);text-transform:uppercase;}
-.t-info .val{font-size:.92rem;font-weight:600;color:var(--cream);}
+.t-info .lbl{font-size:.62rem;letter-spacing:.1em;color:#7a5020;text-transform:uppercase;font-weight:700;}
+.t-info .val{font-size:.95rem;font-weight:800;color:#1a0805;}
 .t-badge{display:inline-block;padding:.2rem .7rem;border-radius:20px;
   font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.1em;font-weight:700;margin-top:.4rem;}
 .b-1000{background:linear-gradient(90deg,#5a0000,#9b1a1a);color:#ffd9d9;}
@@ -190,13 +188,63 @@ tr:hover td{background:rgba(200,140,0,.06);}
 .export-row{display:flex;gap:.8rem;margin-top:1rem;flex-wrap:wrap;align-items:center;}
 
 @media print{
-  body{background:white;}
-  header,.tabs,.page:not(#pg-ticket){display:none!important;}
-  #pg-ticket{display:block!important;padding:0;}
-  .two-col{grid-template-columns:1fr;}
-  .panel:first-child,.ticket-actions{display:none!important;}
-  #ticket-output{display:block!important;}
-  .ticket{box-shadow:none;}
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  body { background: white !important; margin: 0; }
+  header, .tabs, .page:not(#pg-ticket), .ticket-actions { display: none !important; }
+  #pg-ticket { display: block !important; padding: 20px; }
+  .two-col { display: block !important; }
+  .panel:first-child { display: none !important; }
+  #ticket-output { display: block !important; }
+  #ticket-placeholder { display: none !important; }
+
+  .ticket {
+    width: 680px !important;
+    margin: 20px auto !important;
+    border-radius: 14px !important;
+    overflow: hidden !important;
+    border: 2px solid #c9973a !important;
+    box-shadow: none !important;
+    background: #fffaf0 !important;
+  }
+  .ticket-top {
+    background: linear-gradient(135deg, #3a0a10 0%, #1a0530 100%) !important;
+    padding: 16px 20px 12px !important;
+    border-bottom: 1px dashed rgba(201,151,58,.4) !important;
+    position: relative !important;
+  }
+  .t-org { color: #c9973a !important; font-size: 9px !important; letter-spacing: 1px !important; }
+  .t-event { font-size: 26px !important; color: #f7e8b0 !important; -webkit-text-fill-color: #f7e8b0 !important; }
+  .t-tagline { color: rgba(247,232,176,.6) !important; font-size: 11px !important; }
+  .t-date { color: #c9973a !important; font-size: 10px !important; }
+  .t-time { color: #fff !important; font-size: 20px !important; }
+  .ticket-body { background: #fffaf0 !important; padding: 14px 20px !important; }
+  .t-venue { color: #4a2a08 !important; font-size: 11px !important; margin-bottom: 12px !important; }
+  .t-venue strong { color: #7a3a00 !important; font-size: 12px !important; font-weight: 800 !important; }
+  .t-fields { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 10px !important; margin-bottom: 10px !important; }
+  .t-field label { color: rgba(247,232,176,.5) !important; font-size: 9px !important; }
+  .t-field .val { color: #1a0805 !important; font-size: 15px !important; font-weight: 800 !important; }
+  .t-field .val.hl { color: #7a3000 !important; }
+  .ticket-bottom {
+    background: #fdf0d0 !important;
+    padding: 12px 20px !important;
+    border-top: 1px dashed rgba(201,151,58,.3) !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+  .t-qr { background: white !important; padding: 6px !important; border-radius: 6px !important; }
+  .t-info { padding-left: 16px !important; }
+  .t-info .lbl { color: #7a5020 !important; font-size: 9px !important; font-weight: 700 !important; }
+  .t-info .val { color: #1a0805 !important; font-size: 14px !important; font-weight: 800 !important; }
+  .t-badge { font-size: 10px !important; padding: 3px 10px !important; border-radius: 20px !important; }
+  .b-1000 { background: #8B1a2a !important; color: #ffd9d9 !important; }
+  .b-500  { background: #8B5e00 !important; color: #ffe0a0 !important; }
+  .b-100  { background: #1a5e2a !important; color: #b0ffb0 !important; }
+  .b-50   { background: #1a3a6e !important; color: #b0ccff !important; }
+  .b-25   { background: #3a3a4a !important; color: #e0e0ff !important; }
+  .b-comp { background: #333 !important; color: #e0e0e0 !important; }
+
+  /* Hide the page title shown by browser */
+  #pg-ticket > .panel-title { display: none !important; }
 }
 </style>
 </head>
@@ -294,7 +342,7 @@ tr:hover td{background:rgba(200,140,0,.06);}
               <div class="t-field"><label>Name</label><div class="val" id="t-name" style="font-size:1rem;">—</div></div>
               <div class="t-field"><label>Seat</label><div class="val hl" id="t-seat">—</div></div>
             </div>
-            <div style="margin-bottom:.6rem;"><span style="font-size:.58rem;letter-spacing:.12em;color:rgba(247,232,176,.45);text-transform:uppercase;">Ticket ID &nbsp;</span><span id="t-num" style="font-size:.72rem;color:rgba(247,232,176,.7);font-family:monospace;letter-spacing:.04em;">—</span></div>
+            <div style="margin-bottom:.6rem;"><span style="font-size:.62rem;letter-spacing:.1em;color:#7a5020;text-transform:uppercase;font-weight:700;">Ticket ID &nbsp;</span><span id="t-num" style="font-size:.75rem;color:#3a1800;font-family:monospace;letter-spacing:.04em;font-weight:700;">—</span></div>
           </div>
           <div class="ticket-bottom">
             <div class="t-qr" id="qr-container"></div>
