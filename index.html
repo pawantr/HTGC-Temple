@@ -330,7 +330,14 @@ tr:hover td{background:rgba(200,140,0,.06);}
         <tbody id="reg-body"></tbody>
       </table>
     </div>
-    <div class="export-row">
+    <div style="margin-bottom:1.2rem;padding:1rem;background:#fffaf0;border:1px solid rgba(100,60,0,.15);border-radius:10px;">
+  <div style="font-family:'Cinzel',serif;font-size:.75rem;color:#5a2800;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.6rem;">Import Registry CSV</div>
+  <div style="font-size:.82rem;color:#5a3010;margin-bottom:.7rem;">Load a previously exported CSV to restore booked seats on the map.</div>
+  <input type="file" id="import-csv-input" accept=".csv" style="display:none;" onchange="importCSV(this)">
+  <button class="btn-act btn-print" style="max-width:200px;" onclick="document.getElementById('import-csv-input').click()">📂 Import CSV</button>
+  <span id="import-status" style="font-size:.78rem;color:#5a8a3a;margin-left:.8rem;font-weight:600;"></span>
+</div>
+<div class="export-row">
       <button class="btn-act btn-dl" style="max-width:180px;" onclick="exportCSV()">⬇ Export CSV</button>
       <span style="font-size:.82rem;color:#5a3010;font-weight:600;" id="reg-count">0 tickets</span>
     </div>
@@ -626,6 +633,65 @@ function exportCSV() {
   a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
   a.download = 'Chaitanya2026_Registry.csv';
   a.click();
+}
+
+
+function importCSV(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const lines = e.target.result.split('\n').filter(l => l.trim());
+    if (lines.length < 2) { alert('Empty or invalid CSV.'); return; }
+    
+    // Parse header
+    const headers = lines[0].split(',').map(h => h.replace(/"/g,'').trim());
+    const nameIdx = headers.indexOf('Name');
+    const seatIdx = headers.indexOf('Seat');
+    const tierIdx = headers.indexOf('Tier');
+    const numIdx  = headers.indexOf('Ticket No.');
+    const confirmIdx = headers.indexOf('Confirm');
+    const emailIdx = headers.indexOf('Email');
+    
+    let imported = 0;
+    registry = []; // Clear current registry
+    
+    for (let i = 1; i < lines.length; i++) {
+      // Handle quoted commas
+      const cols = lines[i].match(/(".*?"|[^,]+)(?=,|$)/g) || [];
+      const clean = cols.map(c => c.replace(/"/g,'').trim());
+      
+      const name = clean[nameIdx] || '';
+      const seat = clean[seatIdx] || '';
+      const tier = clean[tierIdx] || '';
+      const num  = clean[numIdx]  || '';
+      const confirm = clean[confirmIdx] || '';
+      const email = clean[emailIdx] || '';
+      
+      if (!name || !seat) continue;
+      
+      // Mark seat as booked in data
+      if (seatMap[seat]) {
+        seatMap[seat]['Status'] = 'Booked';
+        seatMap[seat]['Sponsor / Guest Name'] = name;
+        const btn = document.querySelector('[data-id="' + seat + '"]');
+        if (btn) {
+          btn.classList.remove('available','selected');
+          btn.classList.add('booked');
+          btn.style.opacity = '.4';
+        }
+      }
+      
+      registry.push({seq: i, num, name, seat, tier, email, confirm, status:'Issued'});
+      imported++;
+    }
+    
+    updateStats();
+    renderRegistry();
+    document.getElementById('import-status').textContent = '✓ ' + imported + ' tickets loaded';
+    input.value = ''; // Reset so same file can be re-imported
+  };
+  reader.readAsText(file);
 }
 
 // ═══ INIT ═══
