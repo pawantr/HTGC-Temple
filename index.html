@@ -702,7 +702,7 @@ function generateTicket() {
     'Name: ' + name,
     'Seat: ' + seatRaw,
     'Tier: ' + cfg.label,
-    'Confirm: ' + confirm
+    'Confirm: ' + confirmCode
   ].join('\n');
   new QRCode(qrContainer, {
     text: qrText,
@@ -1044,7 +1044,7 @@ function whatsappSingle(idx) {
     'Please show this message at the entrance.',
     'ॐ We look forward to welcoming you! 🙏'
   ].join('\n');
-  window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+  window.open('https://web.whatsapp.com/send?text=' + encodeURIComponent(msg), '_blank');
 }
 
 function whatsappAll() {
@@ -1161,7 +1161,7 @@ function whatsappFromRegistry(idx) {
     'Please show this message at the entrance.',
     'ॐ We look forward to welcoming you! 🙏'
   ].join('\n');
-  window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+  window.open('https://web.whatsapp.com/send?text=' + encodeURIComponent(msg), '_blank');
 }
 
 // ═══ GOOGLE SHEETS SYNC ═══
