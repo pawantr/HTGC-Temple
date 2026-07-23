@@ -306,7 +306,8 @@ var registry = [];
 var bulkTickets = [];
 var ticketCounter = 1;
 var selectedSeat = null;
-var scriptURL = localStorage.getItem('htgc_script_url') || '';
+var scriptURL = '';
+try { scriptURL = localStorage.getItem('htgc_script_url') || ''; } catch(e) { scriptURL = ''; }
 var pendingTicket = null;
 
 var ZONES = {
@@ -636,7 +637,7 @@ function doDownloadPNG() {
 // ════════════════════════════════
 function onUrlChange(val) {
   scriptURL = val.trim();
-  localStorage.setItem('htgc_script_url', scriptURL);
+  try { localStorage.setItem('htgc_script_url', scriptURL); } catch(e) {}
 }
 
 function setSyncStatus(msg, color) {
@@ -662,7 +663,7 @@ function syncAdd(t) {
 
 function doLoadSheet() {
   var val = document.getElementById('script-url-inp').value.trim();
-  if (val) { scriptURL = val; localStorage.setItem('htgc_script_url', scriptURL); onUrlChange(val); }
+  if (val) { scriptURL = val; try { localStorage.setItem('htgc_script_url', scriptURL); } catch(e) {} onUrlChange(val); }
   if (!scriptURL) { alert('Paste your Apps Script URL first.'); return; }
   setSyncStatus('⏳ Loading...','#c07020');
   fetch(scriptURL + '?action=getAll')
