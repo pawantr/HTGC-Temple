@@ -368,19 +368,21 @@ tr:hover td{background:rgba(200,140,0,.06);}
 <!-- ═══ REGISTRY ═══ -->
 <div class="page" id="pg-registry">
   <div style="background:#fff;border:1px solid rgba(100,60,0,.2);border-radius:12px;padding:1.2rem 1.4rem;margin-bottom:1.4rem;box-shadow:0 1px 8px rgba(0,0,0,.06);">
-  <div style="font-family:'Cinzel',serif;font-size:.82rem;color:#5a2800;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.8rem;">📁 Google Drive Sync</div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
-    <div>
-      <div style="font-size:.78rem;font-weight:700;color:#3a1800;margin-bottom:.3rem;">⬇ Start of session</div>
-      <div style="font-size:.8rem;color:#5a3010;line-height:1.6;">1. Open Google Drive master CSV<br>2. Download it<br>3. Click <strong>Import CSV</strong> below</div>
-    </div>
-    <div>
-      <div style="font-size:.78rem;font-weight:700;color:#3a1800;margin-bottom:.3rem;">⬆ After issuing tickets</div>
-      <div style="font-size:.8rem;color:#5a3010;line-height:1.6;">1. Click <strong>Export CSV</strong> below<br>2. Upload to Google Drive<br>3. Replace the old file</div>
+  <div style="font-family:'Cinzel',serif;font-size:.82rem;color:#5a2800;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.8rem;">🔗 Google Sheets Live Sync</div>
+  <div style="margin-bottom:.8rem;">
+    <label style="font-size:.72rem;font-weight:700;color:#5a3010;text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:.3rem;">Apps Script Web App URL</label>
+    <div style="display:flex;gap:.5rem;">
+      <input type="text" id="script-url" placeholder="Paste your Apps Script Web App URL here..." 
+        style="flex:1;padding:.5rem .8rem;border:2px solid rgba(100,60,0,.3);border-radius:7px;font-size:.85rem;color:#1a0805;background:#fff;"
+        oninput="saveScriptUrl(this.value)">
+      <button onclick="loadFromSheet()" style="padding:.5rem 1rem;background:#2e7d32;color:#fff;border:none;border-radius:7px;font-weight:700;font-size:.82rem;cursor:pointer;white-space:nowrap;">🔄 Load Registry</button>
     </div>
   </div>
-  <div style="margin-top:.8rem;padding:.6rem .8rem;background:#fffaee;border-radius:6px;font-size:.76rem;color:#7a5020;border-left:3px solid #c9973a;">
-    ⚠️ Always import the latest CSV before issuing tickets to avoid double-booking
+  <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;">
+    <div id="sync-status" style="font-size:.78rem;color:#7a5020;font-style:italic;">Not connected — paste your Apps Script URL above</div>
+  </div>
+  <div style="padding:.6rem .8rem;background:#fffaee;border-radius:6px;font-size:.75rem;color:#7a5020;border-left:3px solid #c9973a;">
+    ⚡ Once connected, every ticket you issue auto-saves to your Google Sheet in real time. All team members see updates instantly.
   </div>
 </div>
 <div class="panel" id="reg-empty" style="text-align:center;padding:2rem;color:#7a5030;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.1rem;">
@@ -686,7 +688,12 @@ function addToRegistry() {
     updateStats();
   }
 
+  // Get zone name for sheet
+  const zoneBanner = document.getElementById('t-zone-banner');
+  t.zone = zoneBanner ? zoneBanner.textContent : '';
+
   renderRegistry();
+  syncToSheet(t); // Auto-sync to Google Sheet
   window._pendingTicket = null;
   selectedSeatId = null;
   alert(`✓ ${t.name} · Seat ${t.seat} added to registry.`);
@@ -826,6 +833,92 @@ function shareWhatsApp() {
   const url = 'https://wa.me/?text=' + encodeURIComponent(msg);
   window.open(url, '_blank');
 }
+
+
+// ═══ GOOGLE SHEETS SYNC ═══
+let SCRIPT_URL = localStorage.getItem('chaitanya_script_url') || '';
+
+function saveScriptUrl(val) {
+  SCRIPT_URL = val.trim();
+  localStorage.setItem('chaitanya_script_url', SCRIPT_URL);
+}
+
+function setSyncStatus(msg, color) {
+  const el = document.getElementById('sync-status');
+  if (el) { el.textContent = msg; el.style.color = color || '#7a5020'; }
+}
+
+async function syncToSheet(ticket) {
+  if (!SCRIPT_URL) return; // silently skip if no URL set
+  try {
+    setSyncStatus('⏳ Syncing to Google Sheet...', '#c07020');
+    const resp = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'add',
+        num: ticket.num,
+        name: ticket.name,
+        seat: ticket.seat,
+        zone: ticket.zone || '',
+        tier: ticket.tier,
+        email: ticket.email || '',
+        confirm: ticket.confirm
+      })
+    });
+    const data = await resp.json();
+    if (data.status === 'ok') {
+      setSyncStatus('✅ Synced to Google Sheet at ' + new Date().toLocaleTimeString(), '#2e7d32');
+    } else {
+      setSyncStatus('⚠️ Sync issue: ' + data.message, '#c07020');
+    }
+  } catch(err) {
+    setSyncStatus('❌ Could not reach Google Sheet — ticket saved locally only', '#9b1a1a');
+  }
+}
+
+async function loadFromSheet() {
+  if (!SCRIPT_URL) { alert('Please paste your Apps Script URL first.'); return; }
+  setSyncStatus('⏳ Loading from Google Sheet...', '#c07020');
+  try {
+    const resp = await fetch(SCRIPT_URL + '?action=getAll');
+    const data = await resp.json();
+    if (data.status === 'ok' && data.tickets.length > 0) {
+      registry = [];
+      data.tickets.forEach(t => {
+        registry.push(t);
+        // Mark seat as booked on map
+        if (t.seat && seatMap[t.seat]) {
+          seatMap[t.seat]['Status'] = 'Booked';
+          seatMap[t.seat]['Sponsor / Guest Name'] = t.name;
+          const btn = document.querySelector('[data-id="' + t.seat + '"]');
+          if (btn) {
+            btn.classList.remove('available','selected');
+            btn.classList.add('booked');
+            btn.style.opacity = '.4';
+          }
+        }
+      });
+      updateStats();
+      renderRegistry();
+      setSyncStatus('✅ Loaded ' + data.tickets.length + ' tickets from Google Sheet', '#2e7d32');
+    } else {
+      setSyncStatus('ℹ️ Sheet is empty — no tickets yet', '#7a5020');
+    }
+  } catch(err) {
+    setSyncStatus('❌ Could not reach Google Sheet. Check your URL.', '#9b1a1a');
+  }
+}
+
+// Restore saved URL on page load
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem('chaitanya_script_url');
+  if (saved) {
+    SCRIPT_URL = saved;
+    const inp = document.getElementById('script-url');
+    if (inp) inp.value = saved;
+    setSyncStatus('🔗 URL loaded — click Load Registry to sync', '#2e7d32');
+  }
+});
 
 // ═══ INIT ═══
 buildMap();
