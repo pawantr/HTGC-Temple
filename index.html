@@ -863,7 +863,7 @@ async function downloadTicketImage(format) {
 
 function shareWhatsApp() {
   const name = document.getElementById('t-name').textContent;
-  const confirm = document.getElementById('t-confirm').textContent;
+  const emailConfirm = document.getElementById('t-confirm').textContent;
   const zone = document.getElementById('t-zone-banner').textContent;
   if (!name || name === '—') { alert('Generate a ticket first.'); return; }
   const msg = [
@@ -1059,7 +1059,7 @@ function printAllTickets() {
 // ═══ EMAIL FUNCTIONS ═══
 async function sendEmail() {
   const name = document.getElementById('t-name').textContent;
-  const confirm = document.getElementById('t-confirm').textContent;
+  const emailConfirm = document.getElementById('t-confirm').textContent;
   const zone = document.getElementById('t-zone-banner').textContent;
   if (!name || name === '—') { alert('Generate a ticket first.'); return; }
   if (!SCRIPT_URL) { alert('Please connect your Google Sheet first (Registry tab).'); return; }
@@ -1076,7 +1076,7 @@ async function sendEmail() {
       body: JSON.stringify({
         action: 'sendEmail',
         num: t.num, name, email,
-        zone, tier: t.tier, confirm, seat: t.seat
+        zone, tier: t.tier, confirm: t.confirm || emailConfirmCode || '', seat: t.seat
       })
     });
     const data = await resp.json();
