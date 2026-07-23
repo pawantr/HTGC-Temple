@@ -476,6 +476,7 @@ SEATS_RAW.forEach(s => { seatMap[s["Seat ID"]] = s; });
 let registry = [];
 let ticketCounter = 1;
 let selectedSeatId = null;
+let SCRIPT_URL = '';
 
 // ═══ ZONE MAP ═══
 
@@ -1165,7 +1166,7 @@ function whatsappFromRegistry(idx) {
 }
 
 // ═══ GOOGLE SHEETS SYNC ═══
-let SCRIPT_URL = localStorage.getItem('chaitanya_script_url') || '';
+// SCRIPT_URL declared at top of script
 
 function saveScriptUrl(val) {
   SCRIPT_URL = val.trim();
@@ -1247,11 +1248,12 @@ window.addEventListener('load', () => {
     if (inp) inp.value = saved;
     setSyncStatus('🔗 URL loaded — click Load Registry to sync', '#2e7d32');
   }
+  buildMap();
+  buildDropdown();
 });
 
 // ═══ INIT ═══
-buildMap();
-buildDropdown();
+// (buildMap and buildDropdown called in window.load event above)
 </script>
 <div style="text-align:center;padding:1.5rem;font-size:.72rem;color:#7a5030;letter-spacing:.08em;border-top:1px solid rgba(100,60,0,.1);margin-top:2rem;">
   ॐ &nbsp; Hindu Temple of Greater Chicago &nbsp;·&nbsp; Vivekananda Spiritual Center &nbsp;·&nbsp; Chaitanya 2026
