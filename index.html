@@ -360,6 +360,7 @@ tr:hover td{background:rgba(200,140,0,.06);}
           <button class="btn-act btn-dl" onclick="downloadTicketImage('png')">⬇ Save PNG</button>
           <button class="btn-act btn-add" onclick="addToRegistry()">＋ Registry</button>
           <button class="btn-act" style="background:rgba(37,211,102,.15);border-color:#25d166;color:#1a7a40;font-weight:700;" onclick="shareWhatsApp()">💬 WhatsApp</button>
+          <button class="btn-act" style="background:rgba(30,100,200,.12);border-color:#1565c0;color:#1040a0;font-weight:700;" onclick="sendEmail()">✉️ Email</button>
         </div>
       </div>
     </div>
@@ -404,6 +405,7 @@ tr:hover td{background:rgba(200,140,0,.06);}
           <button class="btn-act btn-dl" onclick="downloadAllImages()">⬇ Download All PNGs</button>
           <button class="btn-act btn-print" onclick="printAllTickets()">🖨 Print All</button>
           <button class="btn-act" style="background:rgba(37,211,102,.15);border-color:#25d166;color:#1a7a40;font-weight:700;" onclick="whatsappAll()">💬 WhatsApp All</button>
+          <button class="btn-act" style="background:rgba(30,100,200,.12);border-color:#1565c0;color:#1040a0;font-weight:700;" onclick="emailAll()">✉️ Email All</button>
         </div>
         <div id="bulk-summary" style="margin-bottom:1rem;"></div>
         <div id="bulk-ticket-list" style="display:flex;flex-direction:column;gap:.8rem;max-height:500px;overflow-y:auto;padding-right:.3rem;"></div>
@@ -443,7 +445,7 @@ tr:hover td{background:rgba(200,140,0,.06);}
     <div class="reg-table-wrap">
       <table>
         <thead><tr>
-          <th>#</th><th>Ticket No.</th><th>Name</th><th>Seat</th><th>Tier</th><th>Email</th><th>Status</th>
+          <th>#</th><th>Ticket No.</th><th>Name</th><th>Seat</th><th>Tier</th><th>Email</th><th>Status</th><th>Email</th><th>WhatsApp</th>
         </tr></thead>
         <tbody id="reg-body"></tbody>
       </table>
@@ -675,13 +677,13 @@ function generateTicket() {
 
   const ticketNum = uid();
   const seqNum = String(ticketCounter).padStart(4,'0');
-  const confirm = 'CH26-' + seqNum;
+  const confirmCode = 'CH26-' + seqNum;
 
   const zone = ZONE_MAP[tier] || { name: "General Zone", bg: "#6a6a7a", textColor: "#fff" };
 
   document.getElementById('t-name').textContent = name;
   document.getElementById('t-seat').textContent = seatRaw;
-  document.getElementById('t-confirm').textContent = confirm;
+  document.getElementById('t-confirm').textContent = confirmCode;
   document.getElementById('t-badge-wrap').innerHTML =
     `<span class="t-badge ${cfg.badge}">${cfg.label}</span>`;
 
@@ -712,7 +714,7 @@ function generateTicket() {
   document.getElementById('ticket-placeholder').style.display = 'none';
   document.getElementById('ticket-output').style.display = 'block';
 
-  window._pendingTicket = {seq:ticketCounter, num:ticketNum, name, seat:seatRaw, tier:cfg.label, email, confirm, status:'Issued'};
+  window._pendingTicket = {seq:ticketCounter, num:ticketNum, name, seat:seatRaw, tier:cfg.label, email, confirm:confirmCode, status:'Issued'};
   ticketCounter++;
 }
 
@@ -754,12 +756,14 @@ function renderRegistry() {
   tbody.innerHTML = registry.map((r,i) => `
     <tr>
       <td>${i+1}</td>
-      <td style="font-size:.7rem;font-family:monospace;color:#7a5020">${r.num}</td>
+      <td style="font-size:.68rem;font-family:monospace;color:#7a5020">${r.num}</td>
       <td style="font-weight:700;color:#1a0805">${r.name}</td>
       <td><strong style="color:#7a3000;font-family:'Cinzel',serif">${r.seat}</strong></td>
       <td style="color:#5a3010">${r.tier}</td>
       <td style="font-size:.75rem;color:#7a5030">${r.email||'—'}</td>
       <td><span class="dot dot-ok"></span>Issued</td>
+      <td>${r.email ? `<button onclick="sendEmailFromRegistry(${i})" style="padding:.2rem .5rem;background:#1565c0;color:#fff;border:none;border-radius:4px;font-size:.7rem;cursor:pointer;">✉️ Send</button>` : '<span style="color:#aaa;font-size:.7rem;">No email</span>'}</td>
+      <td><button onclick="whatsappFromRegistry(${i})" style="padding:.2rem .5rem;background:#25d166;color:#fff;border:none;border-radius:4px;font-size:.7rem;cursor:pointer;">💬 Send</button></td>
     </tr>`).join('');
   document.getElementById('reg-count').textContent = registry.length + ' ticket(s) issued';
   document.getElementById('reg-empty').style.display = 'none';
@@ -806,7 +810,7 @@ function importCSV(input) {
       const seat = clean[seatIdx] || '';
       const tier = clean[tierIdx] || '';
       const num  = clean[numIdx]  || '';
-      const confirm = clean[confirmIdx] || '';
+      const confirmCode = clean[confirmIdx] || '';
       const email = clean[emailIdx] || '';
       
       if (!name || !seat) continue;
@@ -823,7 +827,7 @@ function importCSV(input) {
         }
       }
       
-      registry.push({seq: i, num, name, seat, tier, email, confirm, status:'Issued'});
+      registry.push({seq: i, num, name, seat, tier, email, confirm:confirmCode, status:'Issued'});
       imported++;
     }
     
@@ -913,9 +917,9 @@ function processBulk() {
     const cfg = TIER_CFG[tier] || {badge:'b-comp', label:'General'};
     const zone = ZONE_MAP[tier] || { name: 'General Zone', bg: '#607d8b', textColor: '#fff' };
     const ticketNum = uid();
-    const confirm = 'CH26-' + String(ticketCounter + bulkTickets.length).padStart(4,'0');
+    const confirmCode = 'CH26-' + String(ticketCounter + bulkTickets.length).padStart(4,'0');
 
-    bulkTickets.push({ name, seat, email, tier, tierLabel: cfg.label, zone: zone.name, zoneBg: zone.bg, zoneColor: zone.textColor, num: ticketNum, confirm });
+    bulkTickets.push({ name, seat, email, tier, tierLabel: cfg.label, zone: zone.name, zoneBg: zone.bg, zoneColor: zone.textColor, num: ticketNum, confirm: confirmCode });
   });
 
   if (errors.length) {
@@ -1049,6 +1053,115 @@ function whatsappAll() {
 
 function printAllTickets() {
   window.print();
+}
+
+
+// ═══ EMAIL FUNCTIONS ═══
+async function sendEmail() {
+  const name = document.getElementById('t-name').textContent;
+  const confirm = document.getElementById('t-confirm').textContent;
+  const zone = document.getElementById('t-zone-banner').textContent;
+  if (!name || name === '—') { alert('Generate a ticket first.'); return; }
+  if (!SCRIPT_URL) { alert('Please connect your Google Sheet first (Registry tab).'); return; }
+
+  const email = prompt('Enter email address for ' + name + ':');
+  if (!email || !email.includes('@')) { alert('Invalid email address.'); return; }
+
+  const t = window._pendingTicket || registry[registry.length - 1];
+  if (!t) return;
+
+  try {
+    const resp = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'sendEmail',
+        num: t.num, name, email,
+        zone, tier: t.tier, confirm, seat: t.seat
+      })
+    });
+    const data = await resp.json();
+    alert(data.status === 'ok' ? '✅ Email sent to ' + email : '❌ Failed: ' + data.message);
+  } catch(e) {
+    alert('❌ Could not reach server. Check your Apps Script URL.');
+  }
+}
+
+async function sendEmailFromRegistry(idx) {
+  const t = registry[idx];
+  if (!t) return;
+  if (!SCRIPT_URL) { alert('Please connect your Google Sheet first.'); return; }
+
+  let email = t.email;
+  if (!email || !email.includes('@')) {
+    email = prompt('Enter email address for ' + t.name + ':');
+    if (!email || !email.includes('@')) { alert('Invalid email.'); return; }
+    registry[idx].email = email;
+    renderRegistry();
+  }
+
+  try {
+    const resp = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'sendEmail',
+        num: t.num, name: t.name, email,
+        zone: t.zone || '', tier: t.tier,
+        confirm: t.confirm, seat: t.seat
+      })
+    });
+    const data = await resp.json();
+    alert(data.status === 'ok' ? '✅ Email sent to ' + email : '❌ ' + data.message);
+  } catch(e) {
+    alert('❌ Could not reach server.');
+  }
+}
+
+async function emailAll() {
+  if (!SCRIPT_URL) { alert('Please connect your Google Sheet first.'); return; }
+  const withEmail = bulkTickets.filter(t => t.email && t.email.includes('@'));
+  if (!withEmail.length) { alert('No tickets have email addresses. Add emails in the Name, Seat, Email format.'); return; }
+  if (!window.confirm('Send emails to ' + withEmail.length + ' attendees?')) return;
+
+  let sent = 0;
+  for (const t of withEmail) {
+    try {
+      const resp = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'sendEmail',
+          num: t.num, name: t.name, email: t.email,
+          zone: t.zone, tier: t.tierLabel,
+          confirm: t.confirm, seat: t.seat
+        })
+      });
+      const data = await resp.json();
+      if (data.status === 'ok') sent++;
+      await new Promise(r => setTimeout(r, 500)); // avoid rate limiting
+    } catch(e) {}
+  }
+  alert('✅ Sent ' + sent + ' of ' + withEmail.length + ' emails.');
+}
+
+function whatsappFromRegistry(idx) {
+  const t = registry[idx];
+  if (!t) return;
+  const msg = [
+    '🙏 *Chaitanya — Infinite Energy*',
+    '*Hindu Temple of Greater Chicago · VSC*',
+    '',
+    '🎟 *Your Ticket*',
+    '👤 Name: ' + t.name,
+    '🎨 ' + (t.zone || t.tier),
+    '📅 Saturday, August 8, 2026',
+    '⏰ 4:00 PM – 6:30 PM (Doors 3:30 PM)',
+    '📍 Sama Rathi Auditorium, Lemont IL',
+    '',
+    '✅ Confirmation: ' + t.confirm,
+    '',
+    'Please show this message at the entrance.',
+    'ॐ We look forward to welcoming you! 🙏'
+  ].join('\n');
+  window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
 }
 
 // ═══ GOOGLE SHEETS SYNC ═══
