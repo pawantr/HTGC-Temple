@@ -81,11 +81,11 @@ h1 span{display:block;font-size:.42em;font-weight:400;letter-spacing:.22em;font-
 .seat.selected{box-shadow:0 0 0 2px white,0 0 8px 2px rgba(255,255,255,.5);transform:scale(1.2);z-index:5;}
 
 /* tier colors */
-.tier-1000{background:#8B4513;}
-.tier-500{background:#c8860a;}
-.tier-100{background:#388e3c;}
-.tier-50{background:#1976d2;}
-.tier-25{background:#78909c;}
+.tier-1000{background:#7b1a2a;}
+.tier-500{background:#d4620a;}
+.tier-100{background:#b8860b;}
+.tier-50{background:#00796b;}
+.tier-25{background:#757575;}
 
 /* TOOLTIP */
 #tooltip{position:fixed;background:#fff;border:2px solid #8B5e00;border-radius:8px;
@@ -265,6 +265,7 @@ tr:hover td{background:rgba(200,140,0,.06);}
   <div class="tabs">
     <button class="tab active" onclick="showPage('pg-map',this)">🗺 Seat Map</button>
     <button class="tab" onclick="showPage('pg-ticket',this)">🎟 Issue Ticket</button>
+    <button class="tab" onclick="showPage('pg-bulk',this)">📦 Bulk Issue</button>
     <button class="tab" onclick="showPage('pg-registry',this)">📋 Registry</button>
   </div>
 </header>
@@ -274,11 +275,11 @@ tr:hover td{background:rgba(200,140,0,.06);}
   <div class="map-stats" id="map-stats"></div>
   <div class="map-legend">
     <span style="font-size:.72rem;letter-spacing:.1em;color:#3a1800;text-transform:uppercase;margin-right:.4rem;font-weight:700;">Legend:</span>
-    <span class="leg" style="color:#1a0805;font-weight:600;"><span class="leg-dot" style="background:#8B4513"></span>Brown Zone · $1,000+</span>
-    <span class="leg" style="color:#1a0805;font-weight:600;"><span class="leg-dot" style="background:#c8860a"></span>Amber Zone · $500</span>
-    <span class="leg" style="color:#1a0805;font-weight:600;"><span class="leg-dot" style="background:#388e3c"></span>Green Zone · $100</span>
-    <span class="leg" style="color:#1a0805;font-weight:600;"><span class="leg-dot" style="background:#1976d2"></span>Blue Zone · $50</span>
-    <span class="leg" style="color:#1a0805;font-weight:600;"><span class="leg-dot" style="background:#78909c"></span>Silver Zone · $25</span>
+    <span class="leg" style="color:#1a0805;font-weight:600;"><span class="leg-dot" style="background:#7b1a2a"></span>Maroon Zone · $1,000+</span>
+    <span class="leg" style="color:#1a0805;font-weight:600;"><span class="leg-dot" style="background:#d4620a"></span>Orange Zone · $500</span>
+    <span class="leg" style="color:#1a0805;font-weight:600;"><span class="leg-dot" style="background:#b8860b"></span>Gold Zone · $100</span>
+    <span class="leg" style="color:#1a0805;font-weight:600;"><span class="leg-dot" style="background:#00796b"></span>Teal Zone · $50</span>
+    <span class="leg" style="color:#1a0805;font-weight:600;"><span class="leg-dot" style="background:#757575"></span>Gray Zone · $25</span>
     <span class="leg" style="color:#1a0805;font-weight:600;"><span class="leg-dot" style="background:#444;opacity:.4;border:1px solid #888"></span>Booked</span>
     <span style="font-size:.72rem;color:#7a5030;margin-left:.5rem;font-style:italic;font-weight:500;">· Hover seat for details · Click to select</span>
   </div>
@@ -365,6 +366,55 @@ tr:hover td{background:rgba(200,140,0,.06);}
   </div>
 </div>
 
+
+<!-- ═══ BULK ISSUE ═══ -->
+<div class="page" id="pg-bulk">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:2rem;">
+
+    <!-- LEFT: Input -->
+    <div class="panel">
+      <div class="panel-title">Bulk Ticket Issuance</div>
+      <div style="font-size:.82rem;color:#5a3010;margin-bottom:1rem;line-height:1.6;">
+        Enter one attendee per row: <strong>Name, Seat</strong><br>
+        <span style="color:#7a5030;font-size:.76rem;">e.g.&nbsp; Dr. Sudha Rao, A1</span>
+      </div>
+      <div class="form-row">
+        <label>Paste attendee list (Name, Seat — one per line)</label>
+        <textarea id="bulk-input" rows="12" placeholder="Dr. Sudha Rao, A1&#10;Vikram Sundararaman, A2&#10;Pawan Tripathi, B1&#10;..."></textarea>
+      </div>
+      <div class="form-row">
+        <label>Email column included?</label>
+        <select id="bulk-has-email">
+          <option value="no">No — Name, Seat only</option>
+          <option value="yes">Yes — Name, Seat, Email</option>
+        </select>
+      </div>
+      <button class="btn-generate" onclick="processBulk()">⚡ Generate All Tickets</button>
+      <div id="bulk-status" style="margin-top:.8rem;font-size:.82rem;color:#2e7d32;font-weight:600;"></div>
+    </div>
+
+    <!-- RIGHT: Preview & Results -->
+    <div class="panel">
+      <div class="panel-title">Bulk Results</div>
+      <div id="bulk-placeholder" style="color:#7a5030;font-style:italic;font-family:'Cormorant Garamond',serif;font-size:1rem;padding:1rem 0;">
+        Paste names and seats on the left, then click Generate All Tickets.
+      </div>
+      <div id="bulk-results" style="display:none;">
+        <div style="display:flex;gap:.6rem;margin-bottom:1rem;flex-wrap:wrap;">
+          <button class="btn-act btn-dl" onclick="downloadAllImages()">⬇ Download All PNGs</button>
+          <button class="btn-act btn-print" onclick="printAllTickets()">🖨 Print All</button>
+          <button class="btn-act" style="background:rgba(37,211,102,.15);border-color:#25d166;color:#1a7a40;font-weight:700;" onclick="whatsappAll()">💬 WhatsApp All</button>
+        </div>
+        <div id="bulk-summary" style="margin-bottom:1rem;"></div>
+        <div id="bulk-ticket-list" style="display:flex;flex-direction:column;gap:.8rem;max-height:500px;overflow-y:auto;padding-right:.3rem;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden ticket render area for image generation -->
+  <div id="bulk-render-area" style="position:fixed;left:-9999px;top:0;width:600px;"></div>
+</div>
+
 <!-- ═══ REGISTRY ═══ -->
 <div class="page" id="pg-registry">
   <div style="background:#fff;border:1px solid rgba(100,60,0,.2);border-radius:12px;padding:1.2rem 1.4rem;margin-bottom:1.4rem;box-shadow:0 1px 8px rgba(0,0,0,.06);">
@@ -428,11 +478,11 @@ let selectedSeatId = null;
 // ═══ ZONE MAP ═══
 
 const ZONE_MAP = {
-  "$1,000 & Above": { name: "Brown Zone",  bg: "#6b3a2a", textColor: "#fff3e0", seatColor: "#8B4513" },
-  "$500 Sponsor":   { name: "Amber Zone",  bg: "#b87820", textColor: "#fff8e0", seatColor: "#c8860a" },
-  "$100 Ticket":    { name: "Green Zone",  bg: "#2e7d32", textColor: "#e8f5e9", seatColor: "#388e3c" },
-  "$50 Ticket":     { name: "Blue Zone",   bg: "#1565c0", textColor: "#e3f2fd", seatColor: "#1976d2" },
-  "$25 Ticket":     { name: "Silver Zone", bg: "#607d8b", textColor: "#f5f5f5", seatColor: "#78909c" },
+  "$1,000 & Above": { name: "Maroon Zone", bg: "#7b1a2a", textColor: "#fff0f0", seatColor: "#7b1a2a" },
+  "$500 Sponsor":   { name: "Orange Zone", bg: "#d4620a", textColor: "#fff8f0", seatColor: "#d4620a" },
+  "$100 Ticket":    { name: "Gold Zone",   bg: "#b8860b", textColor: "#fffbe0", seatColor: "#b8860b" },
+  "$50 Ticket":     { name: "Teal Zone",   bg: "#00796b", textColor: "#e0f2f1", seatColor: "#00796b" },
+  "$25 Ticket":     { name: "Gray Zone",   bg: "#616161", textColor: "#f5f5f5", seatColor: "#757575" },
 };
 
 // ═══ TIER CONFIG ═══
@@ -834,6 +884,172 @@ function shareWhatsApp() {
   window.open(url, '_blank');
 }
 
+
+
+// ═══ BULK ISSUE ═══
+let bulkTickets = [];
+
+function processBulk() {
+  const raw = document.getElementById('bulk-input').value.trim();
+  const hasEmail = document.getElementById('bulk-has-email').value === 'yes';
+  if (!raw) { alert('Please enter at least one attendee.'); return; }
+
+  const lines = raw.split('\n').filter(l => l.trim());
+  bulkTickets = [];
+  const errors = [];
+
+  lines.forEach((line, i) => {
+    const parts = line.split(',').map(p => p.trim());
+    const name = parts[0];
+    const seat = parts[1] ? parts[1].toUpperCase() : '';
+    const email = hasEmail ? (parts[2] || '') : '';
+
+    if (!name || !seat) { errors.push('Line ' + (i+1) + ': missing name or seat'); return; }
+    if (!seatMap[seat]) { errors.push('Line ' + (i+1) + ': seat ' + seat + ' not found'); return; }
+    if (seatMap[seat]['Status'] !== 'Available') { errors.push('Line ' + (i+1) + ': seat ' + seat + ' already booked'); return; }
+
+    const seatData = seatMap[seat];
+    const tier = seatData['Tier'];
+    const cfg = TIER_CFG[tier] || {badge:'b-comp', label:'General'};
+    const zone = ZONE_MAP[tier] || { name: 'General Zone', bg: '#607d8b', textColor: '#fff' };
+    const ticketNum = uid();
+    const confirm = 'CH26-' + String(ticketCounter + bulkTickets.length).padStart(4,'0');
+
+    bulkTickets.push({ name, seat, email, tier, tierLabel: cfg.label, zone: zone.name, zoneBg: zone.bg, zoneColor: zone.textColor, num: ticketNum, confirm });
+  });
+
+  if (errors.length) {
+    alert('Some issues found:\n' + errors.join('\n') + '\n\nValid tickets will still be generated.');
+  }
+
+  if (!bulkTickets.length) { alert('No valid tickets to generate.'); return; }
+
+  // Mark seats as booked and add to registry
+  bulkTickets.forEach(t => {
+    if (seatMap[t.seat]) {
+      seatMap[t.seat]['Status'] = 'Booked';
+      seatMap[t.seat]['Sponsor / Guest Name'] = t.name;
+      const btn = document.querySelector('[data-id="' + t.seat + '"]');
+      if (btn) { btn.classList.remove('available','selected'); btn.classList.add('booked'); btn.style.opacity='.4'; }
+    }
+    registry.push({ seq: ticketCounter++, num: t.num, name: t.name, seat: t.seat, tier: t.tierLabel, zone: t.zone, email: t.email, confirm: t.confirm, status: 'Issued' });
+    syncToSheet({ num: t.num, name: t.name, seat: t.seat, zone: t.zone, tier: t.tierLabel, email: t.email, confirm: t.confirm });
+  });
+
+  updateStats();
+  renderRegistry();
+  renderBulkResults();
+  document.getElementById('bulk-status').textContent = '✅ ' + bulkTickets.length + ' tickets generated and added to registry!';
+}
+
+function renderBulkResults() {
+  document.getElementById('bulk-placeholder').style.display = 'none';
+  document.getElementById('bulk-results').style.display = 'block';
+  document.getElementById('bulk-summary').innerHTML =
+    '<span style="font-size:.85rem;font-weight:700;color:#1a0805;">' + bulkTickets.length + ' tickets generated</span>';
+
+  const list = document.getElementById('bulk-ticket-list');
+  list.innerHTML = bulkTickets.map((t,i) => `
+    <div style="background:#fffaf0;border:1px solid rgba(100,60,0,.15);border-radius:8px;padding:.7rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem;">
+      <div>
+        <div style="font-weight:700;color:#1a0805;font-size:.9rem;">${t.name}</div>
+        <div style="font-size:.75rem;color:#7a5030;">Seat: ${t.seat} &nbsp;·&nbsp; ${t.zone} &nbsp;·&nbsp; ${t.confirm}</div>
+      </div>
+      <div style="display:flex;gap:.4rem;">
+        <button onclick="downloadSingleBulk(${i})" style="padding:.3rem .6rem;background:#1565c0;color:#fff;border:none;border-radius:5px;font-size:.72rem;cursor:pointer;">⬇ PNG</button>
+        <button onclick="whatsappSingle(${i})" style="padding:.3rem .6rem;background:#25d166;color:#fff;border:none;border-radius:5px;font-size:.72rem;cursor:pointer;">💬</button>
+      </div>
+    </div>`).join('');
+}
+
+function buildTicketHTML(t) {
+  return `<div style="width:580px;border-radius:12px;overflow:hidden;border:2px solid #c9973a;font-family:Arial,sans-serif;">
+    <div style="background:linear-gradient(135deg,#3a0a10,#1a0530);padding:14px 16px 10px;position:relative;">
+      <div style="font-size:9px;letter-spacing:2px;color:#ffd080;text-transform:uppercase;">The Hindu Temple of Greater Chicago · Vivekananda Spiritual Center</div>
+      <div style="font-size:22px;font-weight:900;color:#ffe090;margin:2px 0;">Chaitanya</div>
+      <div style="font-size:11px;color:#ffe8b0;font-style:italic;">Infinite Energy — A Dance of Vivekananda's Wisdom</div>
+      <div style="position:absolute;top:14px;right:16px;text-align:right;">
+        <div style="font-size:9px;color:#ffd080;letter-spacing:1px;">SAT AUG 08 · 2026</div>
+        <div style="font-size:18px;font-weight:700;color:#fff;">4:00 PM</div>
+      </div>
+    </div>
+    <div style="background:#fffaf0;padding:12px 16px;">
+      <div style="font-size:10px;color:#7a3a00;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Sama Rathi Auditorium</div>
+      <div style="font-size:10px;color:#5a3010;margin-bottom:10px;">10915 Lemont Rd, Lemont, IL 60439 · Doors open 3:30 PM</div>
+      <div style="margin-bottom:6px;">
+        <div style="font-size:9px;color:#7a5020;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Name</div>
+        <div style="font-size:17px;font-weight:800;color:#1a0805;">${t.name}</div>
+      </div>
+      <div style="display:inline-block;padding:5px 14px;border-radius:6px;background:${t.zoneBg};color:${t.zoneColor};font-size:12px;font-weight:700;letter-spacing:1px;margin-bottom:8px;">SEATING · ${t.zone.toUpperCase()}</div>
+    </div>
+    <div style="background:#fdf0d0;padding:10px 16px;border-top:1px dashed rgba(150,90,0,.3);display:flex;align-items:center;gap:12px;">
+      <div id="qr-bulk-${t.num}" style="background:white;padding:4px;border-radius:4px;"></div>
+      <div>
+        <div style="font-size:9px;color:#7a5020;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Confirmation</div>
+        <div style="font-size:14px;font-weight:800;color:#1a0805;">${t.confirm}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function downloadSingleBulk(idx) {
+  const t = bulkTickets[idx];
+  const area = document.getElementById('bulk-render-area');
+  area.innerHTML = buildTicketHTML(t);
+  // Generate QR
+  await new Promise(resolve => {
+    new QRCode(document.getElementById('qr-bulk-' + t.num), {
+      text: 'CHAITANYA 2026\nTicket: ' + t.num + '\nName: ' + t.name + '\nConfirm: ' + t.confirm,
+      width: 70, height: 70, colorDark: '#000', colorLight: '#fff'
+    });
+    setTimeout(resolve, 400);
+  });
+  const el = area.firstElementChild;
+  const canvas = await html2canvas(el, { scale: 3, backgroundColor: '#fffaf0', logging: false });
+  const link = document.createElement('a');
+  link.download = 'Chaitanya2026_' + t.name.replace(/\s+/g,'_') + '.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+  area.innerHTML = '';
+}
+
+async function downloadAllImages() {
+  document.getElementById('bulk-status').textContent = '⏳ Downloading all images...';
+  for (let i = 0; i < bulkTickets.length; i++) {
+    await downloadSingleBulk(i);
+    await new Promise(r => setTimeout(r, 600));
+  }
+  document.getElementById('bulk-status').textContent = '✅ All ' + bulkTickets.length + ' images downloaded!';
+}
+
+function whatsappSingle(idx) {
+  const t = bulkTickets[idx];
+  const msg = [
+    '🙏 *Chaitanya — Infinite Energy*',
+    '*Hindu Temple of Greater Chicago · VSC*',
+    '',
+    '🎟 *Your Ticket*',
+    '👤 Name: ' + t.name,
+    '🎨 ' + t.zone,
+    '📅 Saturday, August 8, 2026',
+    '⏰ 4:00 PM – 6:30 PM (Doors 3:30 PM)',
+    '📍 Sama Rathi Auditorium, Lemont IL',
+    '',
+    '✅ Confirmation: ' + t.confirm,
+    '',
+    'Please show this message at the entrance.',
+    'ॐ We look forward to welcoming you! 🙏'
+  ].join('\n');
+  window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+}
+
+function whatsappAll() {
+  bulkTickets.forEach((t, i) => setTimeout(() => whatsappSingle(i), i * 800));
+}
+
+function printAllTickets() {
+  window.print();
+}
 
 // ═══ GOOGLE SHEETS SYNC ═══
 let SCRIPT_URL = localStorage.getItem('chaitanya_script_url') || '';
