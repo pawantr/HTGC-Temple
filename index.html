@@ -82,8 +82,8 @@ h1 span{display:block;font-size:.42em;font-weight:400;letter-spacing:.22em;font-
 
 /* tier colors */
 .tier-1000{background:#7b1a2a;}
-.tier-500{background:#d4620a;}
-.tier-100{background:#b8860b;}
+.tier-500{background:#b8860b;}
+.tier-100{background:#d4620a;}
 .tier-50{background:#00796b;}
 .tier-25{background:#757575;}
 
@@ -276,8 +276,8 @@ tr:hover td{background:rgba(200,140,0,.06);}
   <div class="map-legend">
     <span style="font-size:.72rem;letter-spacing:.1em;color:#3a1800;text-transform:uppercase;margin-right:.4rem;font-weight:700;">Legend:</span>
     <span class="leg" style="color:#1a0805;font-weight:600;"><span class="leg-dot" style="background:#7b1a2a"></span>Maroon Zone · $1,000+</span>
-    <span class="leg" style="color:#1a0805;font-weight:600;"><span class="leg-dot" style="background:#d4620a"></span>Orange Zone · $500</span>
-    <span class="leg" style="color:#1a0805;font-weight:600;"><span class="leg-dot" style="background:#b8860b"></span>Gold Zone · $100</span>
+    <span class="leg" style="color:#1a0805;font-weight:600;"><span class="leg-dot" style="background:#b8860b"></span>Gold Zone · $500</span>
+    <span class="leg" style="color:#1a0805;font-weight:600;"><span class="leg-dot" style="background:#d4620a"></span>Orange Zone · $100</span>
     <span class="leg" style="color:#1a0805;font-weight:600;"><span class="leg-dot" style="background:#00796b"></span>Teal Zone · $50</span>
     <span class="leg" style="color:#1a0805;font-weight:600;"><span class="leg-dot" style="background:#757575"></span>Gray Zone · $25</span>
     <span class="leg" style="color:#1a0805;font-weight:600;"><span class="leg-dot" style="background:#444;opacity:.4;border:1px solid #888"></span>Booked</span>
@@ -479,19 +479,19 @@ let selectedSeatId = null;
 
 const ZONE_MAP = {
   "$1,000 & Above": { name: "Maroon Zone", bg: "#7b1a2a", textColor: "#fff0f0", seatColor: "#7b1a2a" },
-  "$500 Sponsor":   { name: "Orange Zone", bg: "#d4620a", textColor: "#fff8f0", seatColor: "#d4620a" },
-  "$100 Ticket":    { name: "Gold Zone",   bg: "#b8860b", textColor: "#fffbe0", seatColor: "#b8860b" },
+  "$500 Sponsor":   { name: "Gold Zone",   bg: "#b8860b", textColor: "#fffbe0", seatColor: "#b8860b" },
+  "$100 Ticket":    { name: "Orange Zone", bg: "#d4620a", textColor: "#fff8f0", seatColor: "#d4620a" },
   "$50 Ticket":     { name: "Teal Zone",   bg: "#00796b", textColor: "#e0f2f1", seatColor: "#00796b" },
   "$25 Ticket":     { name: "Gray Zone",   bg: "#616161", textColor: "#f5f5f5", seatColor: "#757575" },
 };
 
 // ═══ TIER CONFIG ═══
 const TIER_CFG = {
-  "$1,000 & Above": {color:"#8B1a2a", cls:"tier-1000", badge:"b-1000", label:"Platinum $1,000+"},
-  "$500 Sponsor":   {color:"#8B5e00", cls:"tier-500",  badge:"b-500",  label:"Diamond $500"},
-  "$100 Ticket":    {color:"#1a5e2a", cls:"tier-100",  badge:"b-100",  label:"$100 General"},
-  "$50 Ticket":     {color:"#1a3a6e", cls:"tier-50",   badge:"b-50",   label:"$50 Supporter"},
-  "$25 Ticket":     {color:"#3a3a4a", cls:"tier-25",   badge:"b-25",   label:"$25 Youth/General"},
+  "$1,000 & Above": {color:"#7b1a2a", cls:"tier-1000", badge:"b-1000", label:"Maroon Zone · $1,000+"},
+  "$500 Sponsor":   {color:"#b8860b", cls:"tier-500",  badge:"b-500",  label:"Gold Zone · $500"},
+  "$100 Ticket":    {color:"#d4620a", cls:"tier-100",  badge:"b-100",  label:"Orange Zone · $100"},
+  "$50 Ticket":     {color:"#00796b", cls:"tier-50",   badge:"b-50",   label:"Teal Zone · $50"},
+  "$25 Ticket":     {color:"#757575", cls:"tier-25",   badge:"b-25",   label:"Gray Zone · $25"},
 };
 
 // ═══ PAGE SWITCHING ═══
