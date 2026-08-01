@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:#f0e8d8;color:#1a0805;font-family:'Rajdhani',sans-serif;min-height:100vh;}
@@ -181,6 +182,7 @@ h1{font-family:'Cinzel',serif;font-size:clamp(1.6rem,4vw,2.6rem);font-weight:900
       <div class="ptitle">Issue New Ticket</div>
       <div class="frow"><label>Attendee Full Name</label><input type="text" id="f-name" placeholder="e.g. Dr. Sudha Rao"></div>
       <div class="frow"><label>Email (optional)</label><input type="email" id="f-email" placeholder="attendee@email.com"></div>
+      <div class="frow"><label>Phone (optional, for WhatsApp)</label><input type="tel" id="f-phone" placeholder="+1 630 555 1234"></div>
       <div class="frow">
         <label>Seat ID</label>
         <select id="f-seat-sel" onchange="onSeatSelect(this.value)">
@@ -242,7 +244,7 @@ h1{font-family:'Cinzel',serif;font-size:clamp(1.6rem,4vw,2.6rem);font-weight:900
   <div class="two-col">
     <div class="panel">
       <div class="ptitle">Bulk Ticket Issuance</div>
-      <div style="font-size:.82rem;color:#5a3010;margin-bottom:.8rem;line-height:1.6;">One per line: <strong>Name, Seat</strong> or <strong>Name, Seat, Email</strong><br><span style="color:#7a5030;font-size:.76rem;">e.g. Dr. Sudha Rao, A1, sudha@email.com</span></div>
+      <div style="font-size:.82rem;color:#5a3010;margin-bottom:.8rem;line-height:1.6;">One per line: <strong>Name, Seat, Email, Phone</strong> (email/phone optional)<br><span style="color:#7a5030;font-size:.76rem;">e.g. Dr. Sudha Rao, A1, sudha@email.com, +16305551234</span></div>
       <div class="frow"><textarea id="bulk-input" rows="12" placeholder="Dr. Sudha Rao, A1&#10;Vikram Sundararaman, A2&#10;Pawan Tripathi, B5, pawan@email.com"></textarea></div>
       <button class="btn-main" onclick="doBulk()">⚡ Generate All Tickets</button>
       <div id="bulk-status" style="margin-top:.7rem;font-size:.82rem;color:#2e7d32;font-weight:600;"></div>
@@ -459,6 +461,7 @@ function doGenerateTicket() {
   var name = document.getElementById('f-name').value.trim();
   var seatID = document.getElementById('f-seat-txt').value.trim().toUpperCase();
   var email = document.getElementById('f-email').value.trim();
+  var phone = document.getElementById('f-phone').value.trim().replace(/[^0-9+]/g,'');
 
   if (!name) { alert('Please enter the attendee name.'); return; }
   if (!seatID) { alert('Please select or enter a seat.'); return; }
@@ -489,7 +492,7 @@ function doGenerateTicket() {
   document.getElementById('ticket-ph').style.display = 'none';
   document.getElementById('ticket-out').style.display = 'block';
 
-  pendingTicket = {num:tnum, name:name, seat:seatID, zone:zone.name, tier:tier, email:email, tconf:tconf, status:'Issued'};
+  pendingTicket = {num:tnum, name:name, seat:seatID, zone:zone.name, tier:tier, email:email, phone:phone, tconf:tconf, status:'Issued'};
   ticketCounter++;
 }
 
@@ -503,9 +506,19 @@ function doAddRegistry() {
   registry.push(t);
   markBooked(t.seat, t.name);
   renderRegistry();
-  syncAdd(t);
+  syncAdd(t); // auto-emails if email provided (handled server-side in Apps Script)
+
+  // Auto-open WhatsApp if phone provided
+  if (t.phone) {
+    var cleanPhone = t.phone.replace(/[^0-9]/g,'');
+    window.open('https://wa.me/' + cleanPhone + '?text=' + encodeURIComponent(waMsg(t.name, t.zone, t.tconf)), '_blank');
+  }
+
   pendingTicket = null;
-  alert('✓ ' + t.name + ' added to registry!');
+  var msg = '✓ ' + t.name + ' added to registry!';
+  if (t.email) msg += '\n✉️ Email sending...';
+  if (t.phone) msg += '\n💬 WhatsApp opened — tap Send to deliver.';
+  alert(msg);
 }
 
 function markBooked(sid, name) {
@@ -692,7 +705,7 @@ function doBulk() {
   var errors = [];
   raw.split('\n').forEach(function(line, i) {
     var parts = line.split(',').map(function(p){ return p.trim(); });
-    var name = parts[0], seat = (parts[1]||'').toUpperCase(), email = parts[2]||'';
+    var name = parts[0], seat = (parts[1]||'').toUpperCase(), email = parts[2]||'', phone = (parts[3]||'').replace(/[^0-9+]/g,'');
     if (!name || !seat) { errors.push('Line '+(i+1)+': missing name or seat'); return; }
     if (!seatMap[seat]) { errors.push('Line '+(i+1)+': seat '+seat+' not found'); return; }
     if (seatMap[seat].Status !== 'Available') { errors.push('Line '+(i+1)+': seat '+seat+' already booked'); return; }
@@ -701,7 +714,7 @@ function doBulk() {
     var tnum = makeUID();
     var tconf = 'CH26-' + String(ticketCounter).padStart(4,'0');
     ticketCounter++;
-    bulkTickets.push({num:tnum, name:name, seat:seat, zone:zone.name, zoneBg:zone.bg, zoneFg:zone.fg, tier:tier, email:email, tconf:tconf});
+    bulkTickets.push({num:tnum, name:name, seat:seat, zone:zone.name, zoneBg:zone.bg, zoneFg:zone.fg, tier:tier, email:email, phone:phone, tconf:tconf});
   });
   if (errors.length) alert('Issues:\n' + errors.join('\n'));
   if (!bulkTickets.length) return;
@@ -776,14 +789,61 @@ async function downloadBulkPNG(i) {
 }
 
 async function doDownloadAll() {
-  for (var i=0; i<bulkTickets.length; i++) {
-    await downloadBulkPNG(i);
-    await new Promise(function(r){ setTimeout(r,700); });
+  if (!bulkTickets.length) { alert('No tickets to download.'); return; }
+  var btn = event.target;
+  var origText = btn.textContent;
+  btn.textContent = '⏳ Preparing ZIP...';
+  btn.disabled = true;
+
+  var zip = new JSZip();
+  var area = document.getElementById('bulk-render');
+
+  for (var i = 0; i < bulkTickets.length; i++) {
+    var t = bulkTickets[i];
+    area.innerHTML = bulkTicketHTML(t);
+    await new Promise(function(res){
+      new QRCode(document.getElementById('bulk-qr-' + t.num), {
+        text: 'CHAITANYA 2026\nName:' + t.name + '\nConfirm:' + t.tconf,
+        width: 70, height: 70, colorDark: '#000', colorLight: '#fff'
+      });
+      setTimeout(res, 350);
+    });
+    var canvas = await html2canvas(area.firstElementChild, {scale:3, backgroundColor:'#fffaf0', logging:false});
+    var dataUrl = canvas.toDataURL('image/png').split(',')[1];
+    var filename = String(i+1).padStart(3,'0') + '_' + t.name.replace(/\s+/g,'_') + '_' + t.seat + '.png';
+    zip.file(filename, dataUrl, {base64: true});
+    area.innerHTML = '';
+    btn.textContent = '⏳ ' + (i+1) + '/' + bulkTickets.length + '...';
   }
+
+  btn.textContent = '⏳ Zipping...';
+  var content = await zip.generateAsync({type:'blob'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(content);
+  a.download = 'Chaitanya2026_Tickets_' + bulkTickets.length + '.zip';
+  a.click();
+
+  btn.textContent = origText;
+  btn.disabled = false;
 }
 
-function bulkWA(i) { var t=bulkTickets[i]; window.open('https://web.whatsapp.com/send?text='+encodeURIComponent(waMsg(t.name,t.zone,t.tconf)),'_blank'); }
-function doWAAll() { bulkTickets.forEach(function(t,i){ setTimeout(function(){ window.open('https://web.whatsapp.com/send?text='+encodeURIComponent(waMsg(t.name,t.zone,t.tconf)),'_blank'); }, i*900); }); }
+function bulkWA(i) {
+  var t = bulkTickets[i];
+  var url = t.phone
+    ? 'https://wa.me/' + t.phone.replace(/[^0-9]/g,'') + '?text=' + encodeURIComponent(waMsg(t.name,t.zone,t.tconf))
+    : 'https://web.whatsapp.com/send?text=' + encodeURIComponent(waMsg(t.name,t.zone,t.tconf));
+  window.open(url, '_blank');
+}
+function doWAAll() {
+  bulkTickets.forEach(function(t,i){
+    setTimeout(function(){
+      var url = t.phone
+        ? 'https://wa.me/' + t.phone.replace(/[^0-9]/g,'') + '?text=' + encodeURIComponent(waMsg(t.name,t.zone,t.tconf))
+        : 'https://web.whatsapp.com/send?text=' + encodeURIComponent(waMsg(t.name,t.zone,t.tconf));
+      window.open(url, '_blank');
+    }, i*900);
+  });
+}
 function bulkEmail(i) {
   var t=bulkTickets[i];
   callScript({action:'sendEmail',num:t.num,name:t.name,email:t.email,zone:t.zone,tier:t.tier,tconf:t.tconf,seat:t.seat},function(d){
