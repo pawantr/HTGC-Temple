@@ -160,8 +160,8 @@ h1{font-family:'Cinzel',serif;font-size:clamp(1.6rem,4vw,2.6rem);font-weight:900
   <div class="map-stats" id="map-stats"></div>
   <div class="legend">
     <span style="font-size:.7rem;color:#3a1800;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-right:.3rem;">Legend:</span>
-    <span class="leg"><span class="leg-dot" style="background:#7b1a2a"></span>Maroon Zone · $1,000+</span>
-    <span class="leg"><span class="leg-dot" style="background:#b8860b"></span>Gold Zone · $500</span>
+    <span class="leg"><span class="leg-dot" style="background:#7b1a2a"></span>Platinum Sponsor · $1,000+</span>
+    <span class="leg"><span class="leg-dot" style="background:#b8860b"></span>Diamond Sponsor · $500</span>
     <span class="leg"><span class="leg-dot" style="background:#d4620a"></span>Orange Zone · $100</span>
     <span class="leg"><span class="leg-dot" style="background:#00796b"></span>Teal Zone · $50</span>
     <span class="leg"><span class="leg-dot" style="background:#757575"></span>Gray Zone · $25</span>
@@ -281,7 +281,7 @@ h1{font-family:'Cinzel',serif;font-size:clamp(1.6rem,4vw,2.6rem);font-weight:900
     <div id="reg-empty" style="color:#7a5030;font-style:italic;font-size:.95rem;">No tickets issued yet.</div>
     <div id="reg-wrap" style="display:none;overflow-x:auto;">
       <table class="reg-table">
-        <thead><tr><th>#</th><th>Ticket No.</th><th>Name</th><th>Seat</th><th>Zone</th><th>Email</th><th>Confirm</th><th>Status</th><th>💬</th><th>✉️</th></tr></thead>
+        <thead><tr><th>#</th><th>Ticket No.</th><th>Name</th><th>Seat</th><th>Zone</th><th>Email</th><th>Confirm</th><th>Status</th><th>💬</th><th>✉️</th><th>🗑</th></tr></thead>
         <tbody id="reg-body"></tbody>
       </table>
     </div>
@@ -313,8 +313,8 @@ try { scriptURL = localStorage.getItem('htgc_script_url') || ''; } catch(e) { sc
 var pendingTicket = null;
 
 var ZONES = {
-  "$1,000 & Above": {name:"Maroon Zone", bg:"#7b1a2a", fg:"#fff0f0", mapColor:"#7b1a2a"},
-  "$500 Sponsor":   {name:"Gold Zone",   bg:"#b8860b", fg:"#fffbe0", mapColor:"#b8860b"},
+  "$1,000 & Above": {name:"Platinum Sponsor", bg:"#7b1a2a", fg:"#fff0f0", mapColor:"#7b1a2a"},
+  "$500 Sponsor":   {name:"Diamond Sponsor", bg:"#b8860b", fg:"#fffbe0", mapColor:"#b8860b"},
   "$100 Ticket":    {name:"Orange Zone", bg:"#d4620a", fg:"#fff8f0", mapColor:"#d4620a"},
   "$50 Ticket":     {name:"Teal Zone",   bg:"#00796b", fg:"#e0f2f1", mapColor:"#00796b"},
   "$25 Ticket":     {name:"Gray Zone",   bg:"#616161", fg:"#f5f5f5", mapColor:"#757575"}
@@ -409,7 +409,7 @@ function updateStats() {
   var booked = SEATS_RAW.filter(function(s){ return s.Status !== 'Available'; }).length;
   document.getElementById('map-stats').innerHTML =
     stat(total,'Total','#8B5e00') + stat(total-booked,'Available','#2e7d32') + stat(booked,'Booked','#c0392b') +
-    stat(90,'Maroon $1K+','#7b1a2a') + stat(46,'Gold $500','#b8860b') + stat(46,'Orange $100','#d4620a') +
+    stat(90,'Platinum $1K+','#7b1a2a') + stat(46,'Diamond $500','#b8860b') + stat(46,'Orange $100','#d4620a') +
     stat(69,'Teal $50','#00796b') + stat(230,'Gray $25','#616161');
 }
 function stat(n,l,c){ return '<div class="stat"><div class="stat-n" style="color:'+c+'">'+n+'</div><div class="stat-l">'+l+'</div></div>'; }
@@ -553,9 +553,42 @@ function renderRegistry() {
       '<td><span class="dot"></span>Issued</td>' +
       '<td><button class="sm-btn sm-wa" onclick="regWA(' + i + ')">💬</button></td>' +
       '<td>' + (r.email ? '<button class="sm-btn sm-em" onclick="regEmail(' + i + ')">✉️</button>' : '—') + '</td>' +
+      '<td><button class="sm-btn" style="background:#c0392b;" onclick="deleteTicket(' + i + ')">🗑</button></td>' +
     '</tr>';
   }).join('');
   document.getElementById('reg-count').textContent = registry.length + ' ticket(s)';
+}
+
+
+function deleteTicket(i) {
+  var t = registry[i];
+  if (!t) return;
+  if (!window.confirm('Delete ticket for ' + t.name + ' (Seat ' + t.seat + ')? This will free up the seat.')) return;
+
+  // Free up the seat on the map
+  if (seatMap[t.seat]) {
+    seatMap[t.seat].Status = 'Available';
+    seatMap[t.seat]['Sponsor / Guest Name'] = '';
+    var btn = document.querySelector('[data-id="' + t.seat + '"]');
+    if (btn) {
+      btn.classList.remove('booked');
+      var tier = seatMap[t.seat].Tier;
+      var zone = ZONES[tier] || {mapColor:'#999'};
+      btn.style.background = zone.mapColor;
+    }
+    updateStats();
+  }
+
+  // Remove from local registry
+  registry.splice(i, 1);
+  renderRegistry();
+
+  // Remove from Google Sheet
+  if (scriptURL) {
+    callScript({action:'delete', num:t.num}, function(d){
+      if (d.status !== 'ok') console.log('Sheet delete issue:', d.message);
+    });
+  }
 }
 
 function doExport() {
@@ -671,6 +704,14 @@ function syncAdd(t) {
   setSyncStatus('⏳ Syncing...','#c07020');
   callScript({action:'add', num:t.num, name:t.name, seat:t.seat, zone:t.zone, tier:t.tier, email:t.email||'', tconf:t.tconf}, function(d){
     setSyncStatus(d.status==='ok' ? '✅ Synced at '+new Date().toLocaleTimeString() : '⚠️ '+d.message, d.status==='ok'?'#2e7d32':'#c07020');
+    // Apply the server-assigned authoritative confirmation number
+    if (d.status === 'ok' && d.confirm) {
+      var reg = registry.find(function(r){ return r.num === t.num; });
+      if (reg) { reg.tconf = d.confirm; renderRegistry(); }
+      // Update ticket preview if still showing this ticket
+      var confEl = document.getElementById('tk-conf');
+      if (confEl && confEl.textContent === t.tconf) confEl.textContent = d.confirm;
+    }
   });
 }
 
