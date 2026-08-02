@@ -182,7 +182,7 @@ h1{font-family:'Cinzel',serif;font-size:clamp(1.6rem,4vw,2.6rem);font-weight:900
       <div class="ptitle">Issue New Ticket</div>
       <div class="frow"><label>Attendee Full Name</label><input type="text" id="f-name" placeholder="e.g. Dr. Sudha Rao"></div>
       <div class="frow"><label>Email (optional)</label><input type="email" id="f-email" placeholder="attendee@email.com"></div>
-      <div class="frow"><label>Phone (optional, for WhatsApp)</label><input type="tel" id="f-phone" placeholder="+1 630 555 1234"></div>
+      <div class="frow"><label>Phone (optional, for WhatsApp)</label><input type="text" id="f-phone" placeholder="+1 630 555 1234" value="+1 "></div>
       <div class="frow">
         <label>Seat ID</label>
         <select id="f-seat-sel" onchange="onSeatSelect(this.value)">
@@ -499,25 +499,22 @@ function doGenerateTicket() {
 // ════════════════════════════════
 // REGISTRY
 // ════════════════════════════════
-function doAddRegistry() {
+async function doAddRegistry() {
   if (!pendingTicket) { alert('Generate a ticket first.'); return; }
   var t = pendingTicket;
   if (registry.find(function(r){ return r.num === t.num; })) { alert('Already added!'); return; }
   registry.push(t);
   markBooked(t.seat, t.name);
   renderRegistry();
-  syncAdd(t); // auto-emails if email provided (handled server-side in Apps Script)
 
-  // Auto-open WhatsApp if phone provided
-  if (t.phone) {
-    var cleanPhone = t.phone.replace(/[^0-9]/g,'');
-    window.open('https://wa.me/' + cleanPhone + '?text=' + encodeURIComponent(waMsg(t.name, t.zone, t.tconf)), '_blank');
-  }
+  // Render ticket image for email attachment
+  var imgBase64 = await renderTicketToBase64(t);
+  syncAdd(t, imgBase64); // auto-emails with attached ticket image if email provided
 
   pendingTicket = null;
-  var msg = '✓ ' + t.name + ' added to registry!';
-  if (t.email) msg += '\n✉️ Email sending...';
-  if (t.phone) msg += '\n💬 WhatsApp opened — tap Send to deliver.';
+  var msg = 'Added ' + t.name + ' to registry!';
+  if (t.email) msg += '\nEmail sending with ticket attached...';
+  if (t.phone) msg += '\nUse the WA button below to send via WhatsApp.';
   alert(msg);
 }
 
@@ -634,33 +631,36 @@ function waMsg(name, zone, tconf) {
   return '🙏 Namaste! We are delighted to share your ticket for a beautiful evening of Chaitanya.\n\n🎟 *Chaitanya — Infinite Energy*\n*Hindu Temple of Greater Chicago · VSC*\n\n🎟 *Your Ticket*\n👤 Name: ' + name + '\n🎨 ' + zone + '\n📅 Saturday, August 8, 2026\n⏰ 4:00 PM – 6:30 PM (Doors 3:30 PM)\n📍 Sama Rathi Auditorium, Lemont IL\n\n✅ Confirmation: ' + tconf + '\n\nPlease show this at the entrance.\nॐ We look forward to welcoming you! 🙏';
 }
 
-function doWhatsApp() {
-  if (!pendingTicket && registry.length) {
-    var t = registry[registry.length-1];
-    window.open('https://web.whatsapp.com/send?text=' + encodeURIComponent(waMsg(t.name, t.zone, t.tconf)), '_blank');
-    return;
-  }
-  if (!pendingTicket) { alert('Generate a ticket first.'); return; }
-  window.open('https://web.whatsapp.com/send?text=' + encodeURIComponent(waMsg(pendingTicket.name, pendingTicket.zone, pendingTicket.tconf)), '_blank');
+async function doWhatsApp() {
+  var t = pendingTicket || (registry.length ? registry[registry.length-1] : null);
+  if (!t) { alert('Generate a ticket first.'); return; }
+  var url = t.phone
+    ? 'https://wa.me/' + t.phone.replace(/[^0-9]/g,'') + '?text=' + encodeURIComponent(waMsg(t.name, t.zone, t.tconf))
+    : 'https://web.whatsapp.com/send?text=' + encodeURIComponent(waMsg(t.name, t.zone, t.tconf));
+  window.open(url, '_blank');
+  var imgBase64 = await renderTicketToBase64(t);
+  downloadImageFromBase64(imgBase64, t.name);
 }
 
-function doEmail() {
+async function doEmail() {
   var t = pendingTicket || (registry.length ? registry[registry.length-1] : null);
   if (!t) { alert('Generate a ticket first.'); return; }
   var em = t.email || prompt('Email address for ' + t.name + ':');
   if (!em || !em.includes('@')) return;
-  callScript({action:'sendEmail', num:t.num, name:t.name, email:em, zone:t.zone, tier:t.tier, tconf:t.tconf, seat:t.seat}, function(d){
-    alert(d.status==='ok' ? '✅ Email sent!' : '❌ ' + d.message);
+  var imgBase64 = await renderTicketToBase64(t);
+  callScript({action:'sendEmail', num:t.num, name:t.name, email:em, zone:t.zone, tier:t.tier, tconf:t.tconf, seat:t.seat, ticketImage:imgBase64}, function(d){
+    alert(d.status==='ok' ? 'Email sent!' : 'Failed: ' + d.message);
   });
 }
 
 function regWA(i) { var t=registry[i]; if(t) window.open('https://web.whatsapp.com/send?text='+encodeURIComponent(waMsg(t.name,t.zone,t.tconf)),'_blank'); }
-function regEmail(i) {
+async function regEmail(i) {
   var t=registry[i]; if(!t) return;
   var em=t.email||prompt('Email for '+t.name+':');
   if(!em||!em.includes('@')) return;
-  callScript({action:'sendEmail',num:t.num,name:t.name,email:em,zone:t.zone,tier:t.tier,tconf:t.tconf,seat:t.seat},function(d){
-    alert(d.status==='ok'?'✅ Email sent!':'❌ '+d.message);
+  var imgBase64 = await renderTicketToBase64(t);
+  callScript({action:'sendEmail',num:t.num,name:t.name,email:em,zone:t.zone,tier:t.tier,tconf:t.tconf,seat:t.seat,ticketImage:imgBase64},function(d){
+    alert(d.status==='ok'?'Email sent!':'Failed: '+d.message);
   });
 }
 
@@ -699,10 +699,10 @@ function callScript(data, cb) {
     .catch(function(e){ if(cb) cb({status:'error',message:e.toString()}); });
 }
 
-function syncAdd(t) {
+function syncAdd(t, imgBase64) {
   if (!scriptURL) return;
   setSyncStatus('⏳ Syncing...','#c07020');
-  callScript({action:'add', num:t.num, name:t.name, seat:t.seat, zone:t.zone, tier:t.tier, email:t.email||'', tconf:t.tconf}, function(d){
+  callScript({action:'add', num:t.num, name:t.name, seat:t.seat, zone:t.zone, tier:t.tier, email:t.email||'', tconf:t.tconf, ticketImage: imgBase64||''}, function(d){
     setSyncStatus(d.status==='ok' ? '✅ Synced at '+new Date().toLocaleTimeString() : '⚠️ '+d.message, d.status==='ok'?'#2e7d32':'#c07020');
     // Apply the server-assigned authoritative confirmation number
     if (d.status === 'ok' && d.confirm) {
@@ -887,20 +887,23 @@ function doWAAll() {
 }
 function bulkEmail(i) {
   var t=bulkTickets[i];
-  callScript({action:'sendEmail',num:t.num,name:t.name,email:t.email,zone:t.zone,tier:t.tier,tconf:t.tconf,seat:t.seat},function(d){
-    alert(d.status==='ok'?'✅ Email sent to '+t.email:'❌ '+d.message);
+  renderTicketToBase64(t).then(function(imgBase64){
+    callScript({action:'sendEmail',num:t.num,name:t.name,email:t.email,zone:t.zone,tier:t.tier,tconf:t.tconf,seat:t.seat,ticketImage:imgBase64},function(d){
+      alert(d.status==='ok'?'Email sent to '+t.email:'Failed: '+d.message);
+    });
   });
 }
-function doEmailAll() {
+async function doEmailAll() {
   var withEmail = bulkTickets.filter(function(t){ return t.email && t.email.includes('@'); });
   if (!withEmail.length) { alert('No email addresses found. Use format: Name, Seat, Email'); return; }
   if (!window.confirm('Send emails to ' + withEmail.length + ' attendees?')) return;
-  withEmail.forEach(function(t,i){
-    setTimeout(function(){
-      callScript({action:'sendEmail',num:t.num,name:t.name,email:t.email,zone:t.zone,tier:t.tier,tconf:t.tconf,seat:t.seat},function(d){});
-    }, i*600);
-  });
-  setTimeout(function(){ alert('✅ Emails sent to ' + withEmail.length + ' attendees!'); }, withEmail.length*600+200);
+  for (var i = 0; i < withEmail.length; i++) {
+    var t = withEmail[i];
+    var imgBase64 = await renderTicketToBase64(t);
+    callScript({action:'sendEmail',num:t.num,name:t.name,email:t.email,zone:t.zone,tier:t.tier,tconf:t.tconf,seat:t.seat,ticketImage:imgBase64},function(d){});
+    await new Promise(function(r){ setTimeout(r, 300); });
+  }
+  alert('Emails sent to ' + withEmail.length + ' attendees!');
 }
 
 // ════════════════════════════════
