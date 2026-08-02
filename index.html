@@ -198,41 +198,14 @@ h1{font-family:'Cinzel',serif;font-size:clamp(1.6rem,4vw,2.6rem);font-weight:900
       <div class="ptitle">Ticket Preview</div>
       <div class="ticket-ph" id="ticket-ph"><div style="font-size:2rem;opacity:.3">🎟</div><div>Select a seat &amp; enter name</div></div>
       <div id="ticket-out">
-        <div class="ticket" id="the-ticket">
-          <div class="tk-head">
-            <div class="tk-head-inner">
-              <div class="tk-left" style="padding-right:8px;">
-                <div class="tk-org">The Hindu Temple of Greater Chicago · Vivekananda Spiritual Center</div>
-                <div class="tk-name">Chaitanya</div>
-                <div class="tk-tagline">Infinite Energy — A Dance of Vivekananda's Wisdom</div>
-              </div>
-              <div class="tk-right" style="min-width:105px;">
-                <div class="tk-date">SAT AUG 08 · 2026</div>
-                <div class="tk-time">4:00 PM</div>
-              </div>
-            </div>
-          </div>
-          <div class="tk-body">
-            <div class="tk-venue-label">Sama Rathi Auditorium</div>
-            <div class="tk-venue">10915 Lemont Rd, Lemont, IL 60439 · Doors open 3:30 PM</div>
-            <div class="tk-attendee-label">Name</div>
-            <div class="tk-attendee" id="tk-name">—</div>
-            <div id="tk-zone">SEATING ZONE</div>
-          </div>
-          <div class="tk-foot">
-            <div class="tk-qr" id="tk-qr"></div>
-            <div>
-              <div class="tk-conf-label">Confirmation</div>
-              <div class="tk-conf" id="tk-conf">—</div>
-            </div>
-          </div>
-        </div>
+        <div id="the-ticket-slot"></div>
         <div class="act-btns">
           <button class="btn-act btn-print" onclick="window.print()">🖨 Print</button>
           <button class="btn-act btn-pdf" onclick="doDownloadPNG()">⬇ PNG</button>
           <button class="btn-act btn-reg" onclick="doAddRegistry()">＋ Registry</button>
           <button class="btn-act btn-wa" onclick="doWhatsApp()">💬 WA</button>
           <button class="btn-act btn-em" onclick="doEmail()">✉️ Email</button>
+
         </div>
       </div>
     </div>
@@ -244,7 +217,7 @@ h1{font-family:'Cinzel',serif;font-size:clamp(1.6rem,4vw,2.6rem);font-weight:900
   <div class="two-col">
     <div class="panel">
       <div class="ptitle">Bulk Ticket Issuance</div>
-      <div style="font-size:.82rem;color:#5a3010;margin-bottom:.8rem;line-height:1.6;">One per line: <strong>Name, Seat, Email, Phone</strong> (email/phone optional)<br><span style="color:#7a5030;font-size:.76rem;">e.g. Dr. Sudha Rao, A1, sudha@email.com, +16305551234</span></div>
+      <div style="font-size:.82rem;color:#5a3010;margin-bottom:.8rem;line-height:1.6;">One per line: <strong>Name, Seat</strong> then optionally <strong>Email and/or Phone</strong> in any order<br><span style="color:#7a5030;font-size:.76rem;">e.g. Dr. Sudha Rao, A1, sudha@email.com, +16305551234<br>Guest 1, L1, +16305559999 &nbsp;(phone only, no email needed)</span></div>
       <div class="frow"><textarea id="bulk-input" rows="12" placeholder="Dr. Sudha Rao, A1&#10;Vikram Sundararaman, A2&#10;Pawan Tripathi, B5, pawan@email.com"></textarea></div>
       <button class="btn-main" onclick="doBulk()">⚡ Generate All Tickets</button>
       <div id="bulk-status" style="margin-top:.7rem;font-size:.82rem;color:#2e7d32;font-weight:600;"></div>
@@ -482,26 +455,24 @@ function doGenerateTicket() {
   var tnum = makeUID();
   var tconf = 'CH26-' + String(ticketCounter).padStart(4,'0');
 
-  document.getElementById('tk-name').textContent = name;
-  document.getElementById('tk-conf').textContent = tconf;
+  // Render using the SAME template used for downloads/email/bulk - guarantees consistency
+  var slot = document.getElementById('the-ticket-slot');
+  slot.innerHTML = bulkTicketHTML({name:name, num:tnum, tconf:tconf, zone:zone.name, zoneBg:zone.bg, zoneFg:zone.fg});
+  slot.firstElementChild.id = 'the-ticket'; // for print CSS + PNG capture targeting
 
-  var zb = document.getElementById('tk-zone');
-  zb.textContent = 'SEATING · ' + zone.name.toUpperCase();
-  zb.style.background = zone.bg;
-  zb.style.color = zone.fg;
-
-  var qrEl = document.getElementById('tk-qr');
-  qrEl.innerHTML = '';
-  new QRCode(qrEl, {
-    text: 'CHAITANYA 2026\nTicket:' + tnum + '\nName:' + name + '\nConfirm:' + tconf,
-    width:85, height:85, colorDark:'#000', colorLight:'#fff',
-    correctLevel: QRCode.CorrectLevel.M
-  });
+  var qrEl = document.getElementById('bulk-qr-' + tnum);
+  if (qrEl) {
+    new QRCode(qrEl, {
+      text: 'CHAITANYA 2026\nTicket:' + tnum + '\nName:' + name + '\nConfirm:' + tconf,
+      width:70, height:70, colorDark:'#000', colorLight:'#fff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  }
 
   document.getElementById('ticket-ph').style.display = 'none';
   document.getElementById('ticket-out').style.display = 'block';
 
-  pendingTicket = {num:tnum, name:name, seat:seatID, zone:zone.name, tier:tier, email:email, phone:phone, tconf:tconf, status:'Issued'};
+  pendingTicket = {num:tnum, name:name, seat:seatID, zone:zone.name, zoneBg:zone.bg, zoneFg:zone.fg, tier:tier, email:email, phone:phone, tconf:tconf, status:'Issued'};
   ticketCounter++;
 }
 
@@ -678,7 +649,8 @@ async function regEmail(i) {
 // ════════════════════════════════
 function doDownloadPNG() {
   var el = document.getElementById('the-ticket');
-  var name = document.getElementById('tk-name').textContent || 'ticket';
+  if (!el) { alert('Generate a ticket first.'); return; }
+  var name = (pendingTicket && pendingTicket.name) || (registry.length ? registry[registry.length-1].name : 'ticket');
   html2canvas(el, {scale:3, backgroundColor:'#fffaf0', logging:false}).then(function(canvas){
     var a = document.createElement('a');
     a.download = 'Chaitanya2026_' + name.replace(/\s+/g,'_') + '.png';
@@ -718,8 +690,8 @@ function syncAdd(t, imgBase64) {
       var reg = registry.find(function(r){ return r.num === t.num; });
       if (reg) { reg.tconf = d.confirm; renderRegistry(); }
       // Update ticket preview if still showing this ticket
-      var confEl = document.getElementById('tk-conf');
-      if (confEl && confEl.textContent === t.tconf) confEl.textContent = d.confirm;
+      var confEl = document.getElementById('conf-' + t.num);
+      if (confEl) confEl.textContent = d.confirm;
     }
   });
 }
@@ -755,7 +727,18 @@ function doBulk() {
   var errors = [];
   raw.split('\n').forEach(function(line, i) {
     var parts = line.split(',').map(function(p){ return p.trim(); });
-    var name = parts[0], seat = (parts[1]||'').toUpperCase(), email = parts[2]||'', phone = (parts[3]||'').replace(/[^0-9+]/g,'');
+    var name = parts[0], seat = (parts[1]||'').toUpperCase();
+    var email = '', phone = '';
+    // Auto-detect remaining fields as email or phone, regardless of position
+    for (var p = 2; p < parts.length; p++) {
+      var val = parts[p];
+      if (!val) continue;
+      if (val.indexOf('@') !== -1) {
+        email = val;
+      } else if (/[0-9]{7,}/.test(val.replace(/[^0-9]/g,''))) {
+        phone = val.replace(/[^0-9+]/g,'');
+      }
+    }
     if (!name || !seat) { errors.push('Line '+(i+1)+': missing name or seat'); return; }
     if (!seatMap[seat]) { errors.push('Line '+(i+1)+': seat '+seat+' not found'); return; }
     if (seatMap[seat].Status !== 'Available') { errors.push('Line '+(i+1)+': seat '+seat+' already booked'); return; }
@@ -818,7 +801,7 @@ function bulkTicketHTML(t) {
     '<div style="background:#fdf0d0;padding:12px 18px;border-top:1px dashed rgba(150,90,0,.25);display:flex;align-items:center;gap:14px;">' +
       '<div id="bulk-qr-' + t.num + '" style="background:#fff;padding:4px;border-radius:4px;"></div>' +
       '<div><div style="font-size:9px;color:#7a5020;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Confirmation</div>' +
-      '<div style="font-size:15px;font-weight:800;color:#1a0805;">' + t.tconf + '</div></div>' +
+      '<div style="font-size:15px;font-weight:800;color:#1a0805;" id="conf-' + t.num + '">' + t.tconf + '</div></div>' +
     '</div></div>';
 }
 
