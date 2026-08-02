@@ -467,6 +467,15 @@ function doGenerateTicket() {
   if (!seatID) { alert('Please select or enter a seat.'); return; }
 
   var sd = seatMap[seatID];
+  if (sd && sd.Status !== 'Available') {
+    var existingName = sd['Sponsor / Guest Name'] || 'someone';
+    var proceed = window.confirm(
+      'Seat ' + seatID + ' is already issued to ' + existingName + '.\n\n' +
+      'Do you want to proceed anyway and issue a duplicate ticket for this seat?'
+    );
+    if (!proceed) { return; }
+  }
+
   var tier = sd ? sd.Tier : '$25 Ticket';
   var zone = ZONES[tier] || {name:'General Zone', bg:'#616161', fg:'#fff'};
 
@@ -811,6 +820,43 @@ function bulkTicketHTML(t) {
       '<div><div style="font-size:9px;color:#7a5020;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Confirmation</div>' +
       '<div style="font-size:15px;font-weight:800;color:#1a0805;">' + t.tconf + '</div></div>' +
     '</div></div>';
+}
+
+// ═══ TICKET IMAGE RENDERING (for email attachments & WhatsApp download) ═══
+async function renderTicketToBase64(t) {
+  var zone = ZONES[t.tier] || {bg:'#616161', fg:'#fff'};
+  var full = {
+    name: t.name, num: t.num, tconf: t.tconf,
+    zone: t.zone || zone.name, zoneBg: t.zoneBg || zone.bg, zoneFg: t.zoneFg || zone.fg
+  };
+  var area = document.getElementById('bulk-render');
+  area.innerHTML = bulkTicketHTML(full);
+  await new Promise(function(res){
+    new QRCode(document.getElementById('bulk-qr-' + t.num), {
+      text: 'CHAITANYA 2026\nName:' + t.name + '\nConfirm:' + t.tconf,
+      width: 70, height: 70, colorDark: '#000', colorLight: '#fff'
+    });
+    setTimeout(res, 400);
+  });
+  var canvas = await html2canvas(area.firstElementChild, {scale:3, backgroundColor:'#fffaf0', logging:false});
+  area.innerHTML = '';
+  return canvas.toDataURL('image/png').split(',')[1]; // strip data:image/png;base64, prefix
+}
+
+function downloadImageFromBase64(base64, name) {
+  var byteChars = atob(base64);
+  var byteNumbers = new Array(byteChars.length);
+  for (var i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
+  var byteArray = new Uint8Array(byteNumbers);
+  var blob = new Blob([byteArray], {type: 'image/png'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'Chaitanya2026_' + name.replace(/\s+/g,'_') + '.png';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 3000);
 }
 
 async function downloadBulkPNG(i) {
