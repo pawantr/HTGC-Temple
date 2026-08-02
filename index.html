@@ -201,7 +201,7 @@ h1{font-family:'Cinzel',serif;font-size:clamp(1.6rem,4vw,2.6rem);font-weight:900
         <div id="the-ticket-slot"></div>
         <div class="act-btns">
           <button class="btn-act btn-print" onclick="window.print()">🖨 Print</button>
-          <button class="btn-act btn-pdf" onclick="doDownloadPNG()">⬇ PNG</button>
+          <button class="btn-act btn-pdf" onclick="doDownloadPNG()">🖼 PNG</button>
           <button class="btn-act btn-reg" onclick="doAddRegistry()">＋ Registry</button>
           <button class="btn-act btn-wa" onclick="doWhatsApp()">💬 WA</button>
           <button class="btn-act btn-em" onclick="doEmail()">✉️ Email</button>
@@ -254,7 +254,7 @@ h1{font-family:'Cinzel',serif;font-size:clamp(1.6rem,4vw,2.6rem);font-weight:900
     <div id="reg-empty" style="color:#7a5030;font-style:italic;font-size:.95rem;">No tickets issued yet.</div>
     <div id="reg-wrap" style="display:none;overflow-x:auto;">
       <table class="reg-table">
-        <thead><tr><th>#</th><th>Ticket No.</th><th>Name</th><th>Seat</th><th>Zone</th><th>Email</th><th>Confirm</th><th>Status</th><th>💬</th><th>✉️</th><th>🗑</th></tr></thead>
+        <thead><tr><th>#</th><th>Ticket No.</th><th>Name</th><th>Seat</th><th>Zone</th><th>Email</th><th>Confirm</th><th>Status</th><th>🖼</th><th>💬</th><th>✉️</th><th>🗑</th></tr></thead>
         <tbody id="reg-body"></tbody>
       </table>
     </div>
@@ -528,6 +528,7 @@ function renderRegistry() {
       '<td style="font-size:.75rem;color:#7a5030">' + (r.email||'—') + '</td>' +
       '<td style="font-weight:700">' + r.tconf + '</td>' +
       '<td><span class="dot"></span>Issued</td>' +
+      '<td><button class="sm-btn sm-png" onclick="regPNG(' + i + ')">🖼</button></td>' +
       '<td><button class="sm-btn sm-wa" onclick="regWA(' + i + ')">💬</button></td>' +
       '<td>' + (r.email ? '<button class="sm-btn sm-em" onclick="regEmail(' + i + ')">✉️</button>' : '—') + '</td>' +
       '<td><button class="sm-btn" style="background:#c0392b;" onclick="deleteTicket(' + i + ')">🗑</button></td>' +
@@ -611,9 +612,10 @@ function waMsg(name, zone, tconf) {
   return '🙏 Namaste! We are delighted to share your ticket for a beautiful evening of Chaitanya.\n\n🎟 *Chaitanya — Infinite Energy*\n*Hindu Temple of Greater Chicago · VSC*\n\n🎟 *Your Ticket*\n👤 Name: ' + name + '\n🎨 ' + zone + '\n📅 Saturday, August 8, 2026\n⏰ 4:00 PM – 6:30 PM (Doors 3:30 PM)\n📍 Sama Rathi Auditorium, Lemont IL\n\n✅ Confirmation: ' + tconf + '\n\nPlease show this at the entrance.\nॐ We look forward to welcoming you! 🙏';
 }
 
-async function doWhatsApp() {
-  var t = pendingTicket || (registry.length ? registry[registry.length-1] : null);
-  if (!t) { alert('Generate a ticket first.'); return; }
+// ════════════════════════════════
+// UNIFIED CORE ACTIONS — used identically by Issue Ticket, Bulk Issue, and Registry
+// ════════════════════════════════
+async function sendWhatsAppFor(t) {
   var url = t.phone
     ? 'https://wa.me/' + t.phone.replace(/[^0-9]/g,'') + '?text=' + encodeURIComponent(waMsg(t.name, t.zone, t.tconf))
     : 'https://web.whatsapp.com/send?text=' + encodeURIComponent(waMsg(t.name, t.zone, t.tconf));
@@ -622,41 +624,43 @@ async function doWhatsApp() {
   downloadImageFromBase64(imgBase64, t.name);
 }
 
-async function doEmail() {
-  var t = pendingTicket || (registry.length ? registry[registry.length-1] : null);
-  if (!t) { alert('Generate a ticket first.'); return; }
-  var em = t.email || prompt('Email address for ' + t.name + ':');
+async function sendEmailFor(t, emailOverride) {
+  var em = emailOverride || t.email || prompt('Email address for ' + t.name + ':');
   if (!em || !em.includes('@')) return;
   var imgBase64 = await renderTicketToBase64(t);
   callScript({action:'sendEmail', num:t.num, name:t.name, email:em, zone:t.zone, tier:t.tier, tconf:t.tconf, seat:t.seat, ticketImage:imgBase64}, function(d){
-    alert(d.status==='ok' ? 'Email sent!' : 'Failed: ' + d.message);
+    alert(d.status==='ok' ? 'Email sent to ' + em + '!' : 'Failed: ' + d.message);
   });
 }
 
-function regWA(i) { var t=registry[i]; if(t) window.open('https://web.whatsapp.com/send?text='+encodeURIComponent(waMsg(t.name,t.zone,t.tconf)),'_blank'); }
-async function regEmail(i) {
-  var t=registry[i]; if(!t) return;
-  var em=t.email||prompt('Email for '+t.name+':');
-  if(!em||!em.includes('@')) return;
+async function downloadPNGFor(t) {
   var imgBase64 = await renderTicketToBase64(t);
-  callScript({action:'sendEmail',num:t.num,name:t.name,email:em,zone:t.zone,tier:t.tier,tconf:t.tconf,seat:t.seat,ticketImage:imgBase64},function(d){
-    alert(d.status==='ok'?'Email sent!':'Failed: '+d.message);
-  });
+  downloadImageFromBase64(imgBase64, t.name);
 }
+
+function doWhatsApp() {
+  var t = pendingTicket || (registry.length ? registry[registry.length-1] : null);
+  if (!t) { alert('Generate a ticket first.'); return; }
+  sendWhatsAppFor(t);
+}
+
+function doEmail() {
+  var t = pendingTicket || (registry.length ? registry[registry.length-1] : null);
+  if (!t) { alert('Generate a ticket first.'); return; }
+  sendEmailFor(t);
+}
+
+function regWA(i) { var t=registry[i]; if(t) sendWhatsAppFor(t); }
+function regEmail(i) { var t=registry[i]; if(t) sendEmailFor(t); }
+function regPNG(i) { var t=registry[i]; if(t) downloadPNGFor(t); }
 
 // ════════════════════════════════
 // PNG DOWNLOAD
 // ════════════════════════════════
 function doDownloadPNG() {
-  var el = document.getElementById('the-ticket');
-  if (!el) { alert('Generate a ticket first.'); return; }
-  var name = (pendingTicket && pendingTicket.name) || (registry.length ? registry[registry.length-1].name : 'ticket');
-  html2canvas(el, {scale:3, backgroundColor:'#fffaf0', logging:false}).then(function(canvas){
-    var a = document.createElement('a');
-    a.download = 'Chaitanya2026_' + name.replace(/\s+/g,'_') + '.png';
-    a.href = canvas.toDataURL('image/png');
-    a.click();
-  });
+  var t = pendingTicket || (registry.length ? registry[registry.length-1] : null);
+  if (!t) { alert('Generate a ticket first.'); return; }
+  downloadPNGFor(t);
 }
 
 // ════════════════════════════════
@@ -684,7 +688,13 @@ function syncAdd(t, imgBase64) {
   if (!scriptURL) return;
   setSyncStatus('⏳ Syncing...','#c07020');
   callScript({action:'add', num:t.num, name:t.name, seat:t.seat, zone:t.zone, tier:t.tier, email:t.email||'', tconf:t.tconf, ticketImage: imgBase64||''}, function(d){
-    setSyncStatus(d.status==='ok' ? '✅ Synced at '+new Date().toLocaleTimeString() : '⚠️ '+d.message, d.status==='ok'?'#2e7d32':'#c07020');
+    if (d.status === 'ok') {
+      var linkHtml = d.sheetUrl ? ' <a href="' + d.sheetUrl + '" target="_blank" style="color:#1565c0;text-decoration:underline;">Open Sheet</a>' : '';
+      document.getElementById('sync-status').innerHTML = '✅ Synced at ' + new Date().toLocaleTimeString() + linkHtml;
+      document.getElementById('sync-status').style.color = '#2e7d32';
+    } else {
+      setSyncStatus('⚠️ '+d.message, '#c07020');
+    }
     // Apply the server-assigned authoritative confirmation number
     if (d.status === 'ok' && d.confirm) {
       var reg = registry.find(function(r){ return r.num === t.num; });
@@ -711,7 +721,9 @@ function doLoadSheet() {
           markBooked(t.seat, t.name);
         });
         renderRegistry();
-        setSyncStatus('✅ Loaded ' + registry.length + ' tickets','#2e7d32');
+        var linkHtml = d.sheetUrl ? ' <a href="' + d.sheetUrl + '" target="_blank" style="color:#1565c0;text-decoration:underline;">Open Sheet</a>' : '';
+        document.getElementById('sync-status').innerHTML = '✅ Loaded ' + registry.length + ' tickets' + linkHtml;
+        document.getElementById('sync-status').style.color = '#2e7d32';
       } else setSyncStatus('⚠️ '+d.message,'#c07020');
     })
     .catch(function(e){ setSyncStatus('❌ Cannot reach sheet','#c0392b'); });
@@ -769,7 +781,7 @@ function renderBulkResults() {
       '<div><div style="font-weight:700;font-size:.9rem;">' + t.name + '</div>' +
       '<div style="font-size:.74rem;color:#7a5030;">' + t.seat + ' · ' + t.zone + ' · ' + t.tconf + '</div></div>' +
       '<div class="bulk-btns">' +
-        '<button class="sm-btn sm-png" onclick="downloadBulkPNG(' + i + ')">⬇</button>' +
+        '<button class="sm-btn sm-png" onclick="downloadBulkPNG(' + i + ')">🖼</button>' +
         '<button class="sm-btn sm-wa" onclick="bulkWA(' + i + ')">💬</button>' +
         (t.email ? '<button class="sm-btn sm-em" onclick="bulkEmail(' + i + ')">✉️</button>' : '') +
       '</div></div>';
@@ -815,7 +827,8 @@ async function renderTicketToBase64(t) {
   var area = document.getElementById('bulk-render');
   area.innerHTML = bulkTicketHTML(full);
   await new Promise(function(res){
-    new QRCode(document.getElementById('bulk-qr-' + t.num), {
+    var qrTarget = area.querySelector('[id^="bulk-qr-"]');
+    new QRCode(qrTarget, {
       text: 'CHAITANYA 2026\nName:' + t.name + '\nConfirm:' + t.tconf,
       width: 70, height: 70, colorDark: '#000', colorLight: '#fff'
     });
@@ -844,18 +857,7 @@ function downloadImageFromBase64(base64, name) {
 
 async function downloadBulkPNG(i) {
   var t = bulkTickets[i];
-  var area = document.getElementById('bulk-render');
-  area.innerHTML = bulkTicketHTML(t);
-  await new Promise(function(res){
-    new QRCode(document.getElementById('bulk-qr-' + t.num), {text:'CHAITANYA 2026\nName:'+t.name+'\nConfirm:'+t.tconf, width:70, height:70, colorDark:'#000', colorLight:'#fff'});
-    setTimeout(res, 500);
-  });
-  var canvas = await html2canvas(area.firstElementChild, {scale:3, backgroundColor:'#fffaf0', logging:false});
-  var a = document.createElement('a');
-  a.download = 'Chaitanya2026_' + t.name.replace(/\s+/g,'_') + '.png';
-  a.href = canvas.toDataURL('image/png');
-  a.click();
-  area.innerHTML = '';
+  if (t) await downloadPNGFor(t);
 }
 
 async function doDownloadAll() {
@@ -872,7 +874,8 @@ async function doDownloadAll() {
     var t = bulkTickets[i];
     area.innerHTML = bulkTicketHTML(t);
     await new Promise(function(res){
-      new QRCode(document.getElementById('bulk-qr-' + t.num), {
+      var qrTarget = area.querySelector('[id^="bulk-qr-"]');
+      new QRCode(qrTarget, {
         text: 'CHAITANYA 2026\nName:' + t.name + '\nConfirm:' + t.tconf,
         width: 70, height: 70, colorDark: '#000', colorLight: '#fff'
       });
@@ -897,31 +900,13 @@ async function doDownloadAll() {
   btn.disabled = false;
 }
 
-function bulkWA(i) {
-  var t = bulkTickets[i];
-  var url = t.phone
-    ? 'https://wa.me/' + t.phone.replace(/[^0-9]/g,'') + '?text=' + encodeURIComponent(waMsg(t.name,t.zone,t.tconf))
-    : 'https://web.whatsapp.com/send?text=' + encodeURIComponent(waMsg(t.name,t.zone,t.tconf));
-  window.open(url, '_blank');
-}
+function bulkWA(i) { var t = bulkTickets[i]; if(t) sendWhatsAppFor(t); }
 function doWAAll() {
   bulkTickets.forEach(function(t,i){
-    setTimeout(function(){
-      var url = t.phone
-        ? 'https://wa.me/' + t.phone.replace(/[^0-9]/g,'') + '?text=' + encodeURIComponent(waMsg(t.name,t.zone,t.tconf))
-        : 'https://web.whatsapp.com/send?text=' + encodeURIComponent(waMsg(t.name,t.zone,t.tconf));
-      window.open(url, '_blank');
-    }, i*900);
+    setTimeout(function(){ sendWhatsAppFor(t); }, i*900);
   });
 }
-function bulkEmail(i) {
-  var t=bulkTickets[i];
-  renderTicketToBase64(t).then(function(imgBase64){
-    callScript({action:'sendEmail',num:t.num,name:t.name,email:t.email,zone:t.zone,tier:t.tier,tconf:t.tconf,seat:t.seat,ticketImage:imgBase64},function(d){
-      alert(d.status==='ok'?'Email sent to '+t.email:'Failed: '+d.message);
-    });
-  });
-}
+function bulkEmail(i) { var t=bulkTickets[i]; if(t) sendEmailFor(t); }
 async function doEmailAll() {
   var withEmail = bulkTickets.filter(function(t){ return t.email && t.email.includes('@'); });
   if (!withEmail.length) { alert('No email addresses found. Use format: Name, Seat, Email'); return; }
