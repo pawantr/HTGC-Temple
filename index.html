@@ -767,8 +767,16 @@ function doBulk() {
   bulkTickets.forEach(function(t){
     registry.push({num:t.num, name:t.name, seat:t.seat, zone:t.zone, tier:t.tier, email:t.email, phone:t.phone||'', tconf:t.tconf, status:'Issued'});
     markBooked(t.seat, t.name);
-    syncAdd(t);
   });
+  (async function(){
+    for (var i = 0; i < bulkTickets.length; i++) {
+      var bt = bulkTickets[i];
+      var img = '';
+      try { img = await renderTicketToBase64(bt); } catch(e) {}
+      syncAdd(bt, img);
+      await new Promise(function(r){ setTimeout(r, 250); });
+    }
+  })();
   renderRegistry();
   renderBulkResults();
   document.getElementById('bulk-status').textContent = '\u2705 ' + bulkTickets.length + ' tickets generated!';
@@ -819,28 +827,161 @@ function bulkTicketHTML(t) {
 }
 
 // === TICKET IMAGE RENDERING (for email attachments & WhatsApp download) ===
-async function renderTicketToBase64(t) {
-  var zone = ZONES[t.tier] || {bg:'#616161', fg:'#fff'};
-  var full = {
-    name: t.name, num: t.num, tconf: t.tconf,
-    zone: t.zone || zone.name, zoneBg: t.zoneBg || zone.bg, zoneFg: t.zoneFg || zone.fg
-  };
-  var area = document.getElementById('bulk-render');
-  area.innerHTML = bulkTicketHTML(full);
-  await new Promise(function(res){
-    var qrTarget = area.querySelector('[id^="bulk-qr-"]');
-    new QRCode(qrTarget, {
-      text: 'CHAITANYA 2026\nName:' + t.name + '\nConfirm:' + t.tconf,
-      width: 70, height: 70, colorDark: '#000', colorLight: '#fff'
+// Draws the ticket directly on a canvas (no html2canvas -> no gradient parsing issues)
+function rrect(ctx, x, y, w, hh, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + hh, r);
+  ctx.arcTo(x + w, y + hh, x, y + hh, r);
+  ctx.arcTo(x, y + hh, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function makeQRCanvas(text) {
+  return new Promise(function(resolve) {
+    var holder = document.getElementById('bulk-render');
+    holder.innerHTML = '<div id="qr-tmp"></div>';
+    new QRCode(document.getElementById('qr-tmp'), {
+      text: text, width: 200, height: 200,
+      colorDark: '#000000', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
     });
-    setTimeout(res, 400);
+    setTimeout(function() {
+      var c = holder.querySelector('canvas');
+      if (c) { holder.innerHTML = ''; resolve(c); return; }
+      var img = holder.querySelector('img');
+      if (img) {
+        var tmp = document.createElement('canvas');
+        tmp.width = 200; tmp.height = 200;
+        var done = function() {
+          try { tmp.getContext('2d').drawImage(img, 0, 0, 200, 200); } catch (e) {}
+          holder.innerHTML = '';
+          resolve(tmp);
+        };
+        if (img.complete) done(); else { img.onload = done; img.onerror = done; }
+        return;
+      }
+      holder.innerHTML = '';
+      resolve(null);
+    }, 350);
   });
-  var canvas = await html2canvas(area.firstElementChild, {scale:3, backgroundColor:'#fffaf0', logging:false});
-  area.innerHTML = '';
-  return canvas.toDataURL('image/png').split(',')[1]; // strip data:image/png;base64, prefix
+}
+
+async function renderTicketToBase64(t) {
+  var zone = ZONES[t.tier] || {};
+  var zoneName = t.zone || zone.name || 'General Zone';
+  var zoneBg = t.zoneBg || zone.bg || '#616161';
+  var zoneFg = t.zoneFg || zone.fg || '#ffffff';
+
+  var qr = await makeQRCanvas('CHAITANYA 2026\nTicket:' + t.num + '\nName:' + t.name + '\nConfirm:' + t.tconf);
+
+  var W = 620, H = 300, S = 3;
+  var cv = document.createElement('canvas');
+  cv.width = W * S; cv.height = H * S;
+  var ctx = cv.getContext('2d');
+  ctx.scale(S, S);
+  ctx.textBaseline = 'alphabetic';
+
+  // Card background + border
+  ctx.fillStyle = '#fffaf0';
+  rrect(ctx, 1, 1, W - 2, H - 2, 12); ctx.fill();
+
+  // Header band
+  ctx.save();
+  rrect(ctx, 1, 1, W - 2, H - 2, 12); ctx.clip();
+  ctx.fillStyle = '#2d0a1c';
+  ctx.fillRect(0, 0, W, 92);
+  ctx.restore();
+
+  ctx.fillStyle = '#ffd080';
+  ctx.font = 'bold 9px Arial, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('THE HINDU TEMPLE OF GREATER CHICAGO', 20, 22);
+  ctx.fillText('VIVEKANANDA SPIRITUAL CENTER', 20, 34);
+
+  ctx.fillStyle = '#ffe090';
+  ctx.font = 'bold 30px Georgia, serif';
+  ctx.fillText('Chaitanya', 20, 66);
+
+  ctx.fillStyle = '#ffe8b0';
+  ctx.font = 'italic 11px Georgia, serif';
+  ctx.fillText("Infinite Energy - A Dance of Vivekananda's Wisdom", 20, 82);
+
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#ffd080';
+  ctx.font = 'bold 9px Arial, sans-serif';
+  ctx.fillText('SAT AUG 08 - 2026', W - 20, 26);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 20px Arial, sans-serif';
+  ctx.fillText('4:00 PM', W - 20, 50);
+
+  // Body
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#7a3a00';
+  ctx.font = 'bold 10px Arial, sans-serif';
+  ctx.fillText('SAMA RATHI AUDITORIUM', 20, 116);
+
+  ctx.fillStyle = '#5a3010';
+  ctx.font = '10px Arial, sans-serif';
+  ctx.fillText('10915 Lemont Rd, Lemont, IL 60439  -  Doors open 3:30 PM', 20, 131);
+
+  ctx.fillStyle = '#7a5020';
+  ctx.font = 'bold 10px Arial, sans-serif';
+  ctx.fillText('NAME', 20, 156);
+
+  ctx.fillStyle = '#1a0805';
+  ctx.font = 'bold 19px Arial, sans-serif';
+  ctx.fillText(String(t.name || ''), 20, 178);
+
+  // Zone pill
+  var pillText = 'SEATING - ' + String(zoneName).toUpperCase();
+  ctx.font = 'bold 12px Georgia, serif';
+  var pw = ctx.measureText(pillText).width + 28;
+  ctx.fillStyle = zoneBg;
+  rrect(ctx, 20, 190, pw, 26, 6); ctx.fill();
+  ctx.fillStyle = zoneFg;
+  ctx.fillText(pillText, 34, 207);
+
+  // Footer band
+  ctx.save();
+  rrect(ctx, 1, 1, W - 2, H - 2, 12); ctx.clip();
+  ctx.fillStyle = '#fdf0d0';
+  ctx.fillRect(0, 228, W, H - 228);
+  ctx.restore();
+
+  ctx.strokeStyle = 'rgba(150,90,0,0.35)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath(); ctx.moveTo(14, 228.5); ctx.lineTo(W - 14, 228.5); ctx.stroke();
+  ctx.setLineDash([]);
+
+  if (qr) {
+    ctx.fillStyle = '#ffffff';
+    rrect(ctx, 20, 238, 56, 56, 4); ctx.fill();
+    try { ctx.drawImage(qr, 24, 242, 48, 48); } catch (e) {}
+  }
+
+  ctx.fillStyle = '#7a5020';
+  ctx.font = 'bold 9px Arial, sans-serif';
+  ctx.fillText('CONFIRMATION', 92, 258);
+  ctx.fillStyle = '#1a0805';
+  ctx.font = 'bold 16px Arial, sans-serif';
+  ctx.fillText(String(t.tconf || ''), 92, 278);
+
+  // Outer border
+  ctx.strokeStyle = '#c9973a';
+  ctx.lineWidth = 2;
+  rrect(ctx, 1, 1, W - 2, H - 2, 12); ctx.stroke();
+
+  return cv.toDataURL('image/png').split(',')[1];
 }
 
 function downloadImageFromBase64(base64, name) {
+  if (!base64 || base64.length < 100) {
+    alert('Ticket image could not be generated, so nothing was downloaded.\nPlease reload the page and try again.');
+    return;
+  }
   var byteChars = atob(base64);
   var byteNumbers = new Array(byteChars.length);
   for (var i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
@@ -878,20 +1019,9 @@ async function doDownloadAll() {
 
   for (var i = 0; i < bulkTickets.length; i++) {
     var t = bulkTickets[i];
-    area.innerHTML = bulkTicketHTML(t);
-    await new Promise(function(res){
-      var qrTarget = area.querySelector('[id^="bulk-qr-"]');
-      new QRCode(qrTarget, {
-        text: 'CHAITANYA 2026\nName:' + t.name + '\nConfirm:' + t.tconf,
-        width: 70, height: 70, colorDark: '#000', colorLight: '#fff'
-      });
-      setTimeout(res, 350);
-    });
-    var canvas = await html2canvas(area.firstElementChild, {scale:3, backgroundColor:'#fffaf0', logging:false});
-    var dataUrl = canvas.toDataURL('image/png').split(',')[1];
+    var dataUrl = await renderTicketToBase64(t);
     var filename = String(i+1).padStart(3,'0') + '_' + t.name.replace(/\s+/g,'_') + '_' + t.seat + '.png';
     zip.file(filename, dataUrl, {base64: true});
-    area.innerHTML = '';
     btn.textContent = '\u23F3 ' + (i+1) + '/' + bulkTickets.length + '...';
   }
 
