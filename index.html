@@ -249,6 +249,25 @@ h1{font-family:'Cinzel',serif;font-size:clamp(1.6rem,4vw,2.6rem);font-weight:900
     </div>
     <div id="sync-status">Not connected</div>
   </div>
+
+  <div class="sync-box" id="wa-queue-box">
+    <div class="ptitle" style="margin-bottom:.6rem;">&#x1F4AC; WhatsApp Send Queue</div>
+    <div style="font-size:.8rem;color:#5a3010;margin-bottom:.6rem;">
+      Sends to everyone in the registry who has a phone number, one at a time, reusing a single
+      WhatsApp tab so it stays loaded.
+      <label style="display:inline-block;margin-left:.6rem;">
+        <input type="checkbox" id="wa-with-img" style="vertical-align:middle;"> also download ticket image
+      </label>
+    </div>
+    <div class="sync-row">
+      <button class="sync-btn" onclick="waQueueStart()">Start Queue</button>
+      <button class="sync-btn" style="background:#1565c0;" onclick="waQueueOpen()">Open Current</button>
+      <button class="sync-btn" style="background:#8B5e00;" onclick="waQueueNext(true)">Sent - Next</button>
+      <button class="sync-btn" style="background:#777;" onclick="waQueueNext(false)">Skip</button>
+      <button class="sync-btn" style="background:#c0392b;" onclick="waQueueStop()">Stop</button>
+    </div>
+    <div id="wa-queue-status" style="font-size:.85rem;color:#5a3010;margin-top:.5rem;">Queue not started.</div>
+  </div>
   <div class="panel">
     <div class="ptitle">Ticket Registry</div>
     <div id="reg-empty" style="color:#7a5030;font-style:italic;font-size:.95rem;">No tickets issued yet.</div>
@@ -259,6 +278,8 @@ h1{font-family:'Cinzel',serif;font-size:clamp(1.6rem,4vw,2.6rem);font-weight:900
       </table>
     </div>
     <div class="exp-row">
+      <button class="btn-act btn-pdf" style="max-width:200px;" onclick="regDownloadAll()">&#x1F5BC; Download All PNGs (ZIP)</button>
+      <button class="btn-act btn-em" style="max-width:170px;" onclick="regEmailAll()">&#x2709;&#xFE0F; Email All w/ Address</button>
       <button class="btn-act btn-pdf" style="max-width:160px;" onclick="doExport()">&#x2B07; Export CSV</button>
       <div class="frow" style="margin:0;display:flex;align-items:center;gap:.5rem;">
         <input type="file" id="imp-file" accept=".csv" style="display:none;" onchange="doImport(this)">
@@ -639,9 +660,9 @@ function waDigits(raw) {
 async function sendWhatsAppFor(t) {
   var digits = waDigits(t.phone);
   var url = digits
-    ? 'https://wa.me/' + digits + '?text=' + encodeURIComponent(waMsg(t.name, t.zone, t.tconf))
+    ? 'https://web.whatsapp.com/send?phone=' + digits + '&text=' + encodeURIComponent(waMsg(t.name, t.zone, t.tconf))
     : 'https://web.whatsapp.com/send?text=' + encodeURIComponent(waMsg(t.name, t.zone, t.tconf));
-  window.open(url, '_blank');
+  window.open(url, 'htgc_whatsapp');
   var imgBase64 = await renderTicketToBase64(t);
   downloadImageFromBase64(imgBase64, t.name);
 }
@@ -674,6 +695,104 @@ function doEmail() {
 
 function regWA(i) { var t=registry[i]; if(t) sendWhatsAppFor(t).catch(function(e){ alert('WhatsApp error: ' + e.message); }); }
 function regEmail(i) { var t=registry[i]; if(t) sendEmailFor(t).catch(function(e){ alert('Email error: ' + e.message); }); }
+// ---- WhatsApp send queue: one reused tab, no wa.me redirect ----
+var waQueue = [], waPos = 0, waSentCount = 0;
+
+function waQueueRender() {
+  var el = document.getElementById('wa-queue-status');
+  if (!el) return;
+  if (!waQueue.length) { el.textContent = 'Queue not started.'; return; }
+  if (waPos >= waQueue.length) {
+    el.innerHTML = '<b>Queue complete.</b> Marked sent: ' + waSentCount + ' of ' + waQueue.length + '.';
+    return;
+  }
+  var t = waQueue[waPos];
+  el.innerHTML = '<b>' + (waPos + 1) + ' of ' + waQueue.length + '</b> &nbsp; Next: <b>' +
+                 t.name + '</b> &nbsp; ' + waDigits(t.phone) +
+                 ' &nbsp; <span style="color:#7a5030;">(sent so far: ' + waSentCount + ')</span>';
+}
+
+function waQueueStart() {
+  waQueue = registry.filter(function(r){ return waDigits(r.phone).length >= 10; });
+  waPos = 0; waSentCount = 0;
+  if (!waQueue.length) { alert('No registry entries have a usable phone number.'); return; }
+  waQueueRender();
+  waQueueOpen();
+}
+
+function waQueueOpen() {
+  if (waPos >= waQueue.length) { alert('Queue is finished.'); return; }
+  var t = waQueue[waPos];
+  var digits = waDigits(t.phone);
+  // web.whatsapp.com/send skips the wa.me interstitial; the fixed window name
+  // reuses the same tab so WhatsApp Web does not reload each time.
+  window.open('https://web.whatsapp.com/send?phone=' + digits +
+              '&text=' + encodeURIComponent(waMsg(t.name, t.zone, t.tconf)), 'htgc_whatsapp');
+  var wantImg = document.getElementById('wa-with-img');
+  if (wantImg && wantImg.checked) {
+    renderTicketToBase64(t).then(function(b64){ downloadImageFromBase64(b64, t.name); })
+                           .catch(function(){});
+  }
+  waQueueRender();
+}
+
+function waQueueNext(markSent) {
+  if (waPos >= waQueue.length) return;
+  if (markSent) waSentCount++;
+  waPos++;
+  if (waPos >= waQueue.length) { waQueueRender(); alert('Queue complete. Marked sent: ' + waSentCount); return; }
+  waQueueOpen();
+}
+
+function waQueueStop() { waQueue = []; waPos = 0; waSentCount = 0; waQueueRender(); }
+
+async function regDownloadAll() {
+  if (!registry.length) { alert('Registry is empty.'); return; }
+  var btn = event.target, orig = btn.textContent;
+  btn.disabled = true;
+  try {
+    var zip = new JSZip();
+    for (var i = 0; i < registry.length; i++) {
+      var t = registry[i];
+      btn.textContent = 'Rendering ' + (i+1) + '/' + registry.length + '...';
+      var b64 = await renderTicketToBase64(t);
+      var fname = String(i+1).padStart(3,'0') + '_' + String(t.name||'ticket').replace(/[^A-Za-z0-9]+/g,'_') + '_' + (t.seat||'') + '.png';
+      zip.file(fname, b64, {base64: true});
+    }
+    btn.textContent = 'Zipping...';
+    var blob = await zip.generateAsync({type:'blob'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'Chaitanya2026_Tickets_' + registry.length + '.zip';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 5000);
+  } catch(e) {
+    alert('Download error: ' + e.message);
+  }
+  btn.textContent = orig; btn.disabled = false;
+}
+
+async function regEmailAll() {
+  var withEmail = registry.filter(function(r){ return r.email && String(r.email).indexOf('@') !== -1; });
+  if (!withEmail.length) { alert('No registry entries have an email address.'); return; }
+  if (!window.confirm('Send ticket emails to ' + withEmail.length + ' recipient(s)?')) return;
+  var sent = 0;
+  for (var i = 0; i < withEmail.length; i++) {
+    var t = withEmail[i];
+    try {
+      var img = await renderTicketToBase64(t);
+      callScript({action:'sendEmail', num:t.num, name:t.name, email:t.email, zone:t.zone,
+                  tier:t.tier, tconf:t.tconf, seat:t.seat, ticketImage:img}, function(){});
+      sent++;
+      setSyncStatus('Emailing ' + sent + '/' + withEmail.length + '...', '#c07020');
+      await new Promise(function(r){ setTimeout(r, 400); });
+    } catch(e) {}
+  }
+  setSyncStatus('Sent ' + sent + ' email(s).', '#2e7d32');
+  alert('Sent ' + sent + ' of ' + withEmail.length + ' emails.');
+}
+
 function regPNG(i) { var t=registry[i]; if(t) downloadPNGFor(t).catch(function(e){ alert('PNG download error: ' + e.message); }); }
 
 // ================================
