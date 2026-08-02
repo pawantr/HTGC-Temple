@@ -12,10 +12,10 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:#f0e8d8;color:#1a0805;font-family:'Rajdhani',sans-serif;min-height:100vh;}
 
-header{background:linear-gradient(135deg,#2a0810,#1a0528);padding:1.5rem 1rem 0;text-align:center;border-bottom:2px solid rgba(201,151,58,.3);}
+header{background:#21091c;padding:1.5rem 1rem 0;text-align:center;border-bottom:2px solid rgba(201,151,58,.3);}
 .badge{display:inline-flex;align-items:center;gap:.4rem;background:rgba(255,200,80,.12);border:1px solid rgba(255,200,80,.3);border-radius:30px;padding:.2rem .9rem;font-size:.72rem;letter-spacing:.12em;color:#ffd080;text-transform:uppercase;margin-bottom:.5rem;}
-h1{font-family:'Cinzel',serif;font-size:clamp(1.6rem,4vw,2.6rem);font-weight:900;background:linear-gradient(135deg,#ffe090,#ffc040,#ff8020);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:.05em;}
-.sub{display:block;font-size:.42em;font-style:italic;font-family:'Cormorant Garamond',serif;background:linear-gradient(90deg,#ffe8b0,#fff8e8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-top:.1em;letter-spacing:.18em;}
+h1{font-family:'Cinzel',serif;font-size:clamp(1.6rem,4vw,2.6rem);font-weight:900;color:#ffcf5c;letter-spacing:.05em;}
+.sub{display:block;font-size:.42em;font-style:italic;font-family:'Cormorant Garamond',serif;color:#ffeec2;margin-top:.1em;letter-spacing:.18em;}
 .meta{font-size:.8rem;color:#ffd090;letter-spacing:.06em;padding:.5rem 0 1rem;font-weight:600;}
 
 .tabs{display:flex;justify-content:center;gap:0;}
@@ -35,7 +35,7 @@ h1{font-family:'Cinzel',serif;font-size:clamp(1.6rem,4vw,2.6rem);font-weight:900
 .frow input:focus,.frow select:focus,.frow textarea:focus{border-color:#8B5e00;}
 .frow select option{background:#fff;color:#1a0805;}
 .hint{font-size:.7rem;color:#7a5030;margin-top:.25rem;font-style:italic;}
-.btn-main{width:100%;margin-top:1.1rem;padding:.78rem;background:linear-gradient(135deg,#8B5e00,#c07020);border:none;border-radius:9px;font-family:'Cinzel',serif;font-size:.85rem;letter-spacing:.15em;color:#fff;font-weight:700;cursor:pointer;transition:opacity .2s;}
+.btn-main{width:100%;margin-top:1.1rem;padding:.78rem;background:#a56510;border:none;border-radius:9px;font-family:'Cinzel',serif;font-size:.85rem;letter-spacing:.15em;color:#fff;font-weight:700;cursor:pointer;transition:opacity .2s;}
 .btn-main:hover{opacity:.88;}
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:2rem;}
 @media(max-width:760px){.two-col{grid-template-columns:1fr;}}
@@ -44,7 +44,7 @@ h1{font-family:'Cinzel',serif;font-size:clamp(1.6rem,4vw,2.6rem);font-weight:900
 .ticket-ph{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;border:2px dashed rgba(100,60,0,.2);border-radius:12px;color:#7a5030;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.05rem;gap:.4rem;background:rgba(255,255,255,.7);}
 #ticket-out{display:none;}
 .ticket{border-radius:13px;overflow:hidden;border:2px solid #c9973a;box-shadow:0 4px 20px rgba(100,60,0,.15);}
-.tk-head{background:linear-gradient(135deg,#3a0a10,#1a0530);padding:14px 16px 12px;}
+.tk-head{background:#2d0a1c;padding:14px 16px 12px;}
 .tk-head-inner{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
 .tk-left{flex:1;}
 .tk-org{font-size:7.5px;letter-spacing:1px;color:#ffd080;text-transform:uppercase;line-height:1.4;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px;}
@@ -68,7 +68,7 @@ h1{font-family:'Cinzel',serif;font-size:clamp(1.6rem,4vw,2.6rem);font-weight:900
 .btn-act{flex:1;min-width:80px;padding:.55rem .4rem;border-radius:7px;font-family:'Rajdhani',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;border:1.5px solid;transition:all .18s;text-align:center;}
 .btn-print{background:rgba(139,94,0,.1);border-color:#8B5e00;color:#5a3000;}
 .btn-print:hover{background:rgba(139,94,0,.2);}
-.btn-pdf{background:linear-gradient(90deg,#5a0f1a,#7b1a2a);border-color:transparent;color:#fff;}
+.btn-pdf{background:#6b1522;border-color:transparent;color:#fff;}
 .btn-pdf:hover{opacity:.85;}
 .btn-reg{background:rgba(46,125,50,.1);border-color:#2e7d32;color:#1a5a1a;}
 .btn-reg:hover{background:rgba(46,125,50,.2);}
@@ -86,7 +86,7 @@ h1{font-family:'Cinzel',serif;font-size:clamp(1.6rem,4vw,2.6rem);font-weight:900
 .leg{display:flex;align-items:center;gap:.35rem;font-size:.75rem;color:#1a0805;font-weight:600;}
 .leg-dot{width:12px;height:12px;border-radius:3px;flex-shrink:0;}
 .map-box{background:rgba(255,255,255,.9);border:1px solid rgba(100,60,0,.18);border-radius:13px;padding:1.1rem;overflow-x:auto;}
-.stage{background:linear-gradient(180deg,#6b1a2a,#3d0e18);border-radius:50% 50% 0 0/28px 28px 0 0;text-align:center;padding:.55rem 2rem;margin:0 auto 1rem;max-width:280px;font-family:'Cinzel',serif;font-size:.75rem;letter-spacing:.2em;color:#f7e8b0;}
+.stage{background:#54141f;border-radius:50% 50% 0 0/28px 28px 0 0;text-align:center;padding:.55rem 2rem;margin:0 auto 1rem;max-width:280px;font-family:'Cinzel',serif;font-size:.75rem;letter-spacing:.2em;color:#f7e8b0;}
 .stage-lbl{font-size:.58rem;text-align:center;letter-spacing:.12em;color:#5a3010;margin-bottom:.7rem;font-weight:600;}
 .seat-row{display:flex;align-items:center;margin-bottom:2px;gap:2px;}
 .row-lbl{width:20px;font-family:'Cinzel',serif;font-size:.62rem;color:#5a2800;text-align:center;flex-shrink:0;font-weight:700;}
@@ -134,7 +134,7 @@ h1{font-family:'Cinzel',serif;font-size:clamp(1.6rem,4vw,2.6rem);font-weight:900
   #ticket-ph{display:none!important;}
   #ticket-out{display:block!important;}
   .ticket{width:640px;margin:0 auto;}
-  .tk-head{background:linear-gradient(135deg,#3a0a10,#1a0530)!important;}
+  .tk-head{background:#2d0a1c!important;}
   .tk-body{background:#fffaf0!important;}
   .tk-foot{background:#fdf0d0!important;}
 }
@@ -254,7 +254,7 @@ h1{font-family:'Cinzel',serif;font-size:clamp(1.6rem,4vw,2.6rem);font-weight:900
     <div id="reg-empty" style="color:#7a5030;font-style:italic;font-size:.95rem;">No tickets issued yet.</div>
     <div id="reg-wrap" style="display:none;overflow-x:auto;">
       <table class="reg-table">
-        <thead><tr><th>#</th><th>Ticket No.</th><th>Name</th><th>Seat</th><th>Zone</th><th>Email</th><th>Confirm</th><th>Status</th><th>&#x1F5BC;</th><th>&#x1F4AC;</th><th>&#x2709;&#xFE0F;</th><th>&#x1F5D1;</th></tr></thead>
+        <thead><tr><th>#</th><th>Ticket No.</th><th>Name</th><th>Seat</th><th>Zone</th><th>Email</th><th>Phone</th><th>Confirm</th><th>Status</th><th>&#x1F5BC;</th><th>&#x1F4AC;</th><th>&#x2709;&#xFE0F;</th><th>&#x1F5D1;</th></tr></thead>
         <tbody id="reg-body"></tbody>
       </table>
     </div>
@@ -526,6 +526,7 @@ function renderRegistry() {
       '<td style="color:#7a3000;font-weight:700">' + r.seat + '</td>' +
       '<td>' + r.zone + '</td>' +
       '<td style="font-size:.75rem;color:#7a5030">' + (r.email||'\u2014') + '</td>' +
+      '<td style="font-size:.75rem;color:#7a5030">' + (r.phone||'\u2014') + '</td>' +
       '<td style="font-weight:700">' + r.tconf + '</td>' +
       '<td><span class="dot"></span>Issued</td>' +
       '<td><button class="sm-btn sm-png" onclick="regPNG(' + i + ')">\uD83D\uDDBC</button></td>' +
@@ -570,8 +571,8 @@ function deleteTicket(i) {
 }
 
 function doExport() {
-  var rows = [['#','Ticket No.','Name','Seat','Zone','Tier','Email','Confirm','Status']];
-  registry.forEach(function(r,i){ rows.push([i+1,r.num,r.name,r.seat,r.zone,r.tier,r.email||'',r.tconf,r.status]); });
+  var rows = [['#','Ticket No.','Name','Seat','Zone','Tier','Email','Phone','Confirm','Status']];
+  registry.forEach(function(r,i){ rows.push([i+1,r.num,r.name,r.seat,r.zone,r.tier,r.email||'',r.phone||'',r.tconf,r.status]); });
   var csv = rows.map(function(r){ return r.map(function(v){ return '"'+v+'"'; }).join(','); }).join('\n');
   var a = document.createElement('a');
   a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
@@ -588,14 +589,14 @@ function doImport(input) {
     if (lines.length < 2) return;
     var hdrs = lines[0].split(',').map(function(h){ return h.replace(/"/g,'').trim(); });
     var ni=hdrs.indexOf('Name'), si=hdrs.indexOf('Seat'), zi=hdrs.indexOf('Zone'),
-        ti=hdrs.indexOf('Tier'), ei=hdrs.indexOf('Email'), ci=hdrs.indexOf('Confirm'), ui=hdrs.indexOf('Ticket No.');
+        ti=hdrs.indexOf('Tier'), ei=hdrs.indexOf('Email'), pi=hdrs.indexOf('Phone'), ci=hdrs.indexOf('Confirm'), ui=hdrs.indexOf('Ticket No.');
     registry = [];
     for (var i=1; i<lines.length; i++) {
       var cols = lines[i].match(/(".*?"|[^,]+)(?=,|$)/g) || [];
       var c = cols.map(function(x){ return x.replace(/"/g,'').trim(); });
       var name = c[ni]||'', seat = c[si]||'';
       if (!name || !seat) continue;
-      registry.push({num:c[ui]||'', name:name, seat:seat, zone:c[zi]||'', tier:c[ti]||'', email:c[ei]||'', tconf:c[ci]||'', status:'Issued'});
+      registry.push({num:c[ui]||'', name:name, seat:seat, zone:c[zi]||'', tier:c[ti]||'', email:c[ei]||'', phone:(pi!==-1?(c[pi]||''):''), tconf:c[ci]||'', status:'Issued'});
       markBooked(seat, name);
     }
     renderRegistry();
@@ -687,7 +688,7 @@ function callScript(data, cb) {
 function syncAdd(t, imgBase64) {
   if (!scriptURL) return;
   setSyncStatus('\u23F3 Syncing...','#c07020');
-  callScript({action:'add', num:t.num, name:t.name, seat:t.seat, zone:t.zone, tier:t.tier, email:t.email||'', tconf:t.tconf, ticketImage: imgBase64||''}, function(d){
+  callScript({action:'add', num:t.num, name:t.name, seat:t.seat, zone:t.zone, tier:t.tier, email:t.email||'', phone:t.phone||'', tconf:t.tconf, ticketImage: imgBase64||''}, function(d){
     if (d.status === 'ok') {
       var linkHtml = d.sheetUrl ? ' <a href="' + d.sheetUrl + '" target="_blank" style="color:#1565c0;text-decoration:underline;">Open Sheet</a>' : '';
       document.getElementById('sync-status').innerHTML = '\u2705 Synced at ' + new Date().toLocaleTimeString() + linkHtml;
@@ -717,7 +718,7 @@ function doLoadSheet() {
       if (d.status==='ok') {
         registry = [];
         (d.tickets||[]).forEach(function(t){
-          registry.push({num:t.num, name:t.name, seat:t.seat, zone:t.zone, tier:t.tier, email:t.email||'', tconf:t.tconf||t.confirm||'', status:'Issued'});
+          registry.push({num:t.num, name:t.name, seat:t.seat, zone:t.zone, tier:t.tier, email:t.email||'', phone:t.phone||'', tconf:t.tconf||t.confirm||'', status:'Issued'});
           markBooked(t.seat, t.name);
         });
         renderRegistry();
@@ -764,7 +765,7 @@ function doBulk() {
   if (errors.length) alert('Issues:\n' + errors.join('\n'));
   if (!bulkTickets.length) return;
   bulkTickets.forEach(function(t){
-    registry.push({num:t.num, name:t.name, seat:t.seat, zone:t.zone, tier:t.tier, email:t.email, tconf:t.tconf, status:'Issued'});
+    registry.push({num:t.num, name:t.name, seat:t.seat, zone:t.zone, tier:t.tier, email:t.email, phone:t.phone||'', tconf:t.tconf, status:'Issued'});
     markBooked(t.seat, t.name);
     syncAdd(t);
   });
@@ -790,7 +791,7 @@ function renderBulkResults() {
 
 function bulkTicketHTML(t) {
   return '<div style="width:620px;border-radius:12px;overflow:hidden;border:2px solid #c9973a;font-family:Arial,sans-serif;">' +
-    '<div style="background:linear-gradient(135deg,#3a0a10,#1a0530);padding:16px 20px 14px;">' +
+    '<div style="background:#2d0a1c;padding:16px 20px 14px;">' +
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;">' +
         '<div style="flex:1;padding-right:16px;">' +
           '<div style="font-size:8px;letter-spacing:1.2px;color:#ffd080;text-transform:uppercase;margin-bottom:5px;">The Hindu Temple of Greater Chicago \u00B7 Vivekananda Spiritual Center</div>' +
