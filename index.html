@@ -627,9 +627,19 @@ function waMsg(name, zone, tconf) {
 // ================================
 // UNIFIED CORE ACTIONS \u2014 used identically by Issue Ticket, Bulk Issue, and Registry
 // ================================
+// Normalises a phone number for wa.me: bare 10-digit US numbers need the 1 country code,
+// otherwise WhatsApp reads e.g. 630... as country code 63 (Philippines).
+function waDigits(raw) {
+  var d = String(raw == null ? '' : raw).replace(/[^0-9]/g, '');
+  if (d.length === 10) return '1' + d;                    // 6307014107 -> 16307014107
+  if (d.length === 11 && d.charAt(0) === '1') return d;   // already has US country code
+  return d;                                               // assume country code present
+}
+
 async function sendWhatsAppFor(t) {
-  var url = t.phone
-    ? 'https://wa.me/' + t.phone.replace(/[^0-9]/g,'') + '?text=' + encodeURIComponent(waMsg(t.name, t.zone, t.tconf))
+  var digits = waDigits(t.phone);
+  var url = digits
+    ? 'https://wa.me/' + digits + '?text=' + encodeURIComponent(waMsg(t.name, t.zone, t.tconf))
     : 'https://web.whatsapp.com/send?text=' + encodeURIComponent(waMsg(t.name, t.zone, t.tconf));
   window.open(url, '_blank');
   var imgBase64 = await renderTicketToBase64(t);
@@ -729,7 +739,7 @@ function doLoadSheet() {
       if (d.status==='ok') {
         registry = [];
         (d.tickets||[]).forEach(function(t){
-          registry.push({num:t.num, name:t.name, seat:t.seat, zone:t.zone, tier:t.tier, email:t.email||'', phone:t.phone||'', tconf:t.tconf||t.confirm||'', status:'Issued'});
+          registry.push({num:t.num, name:t.name, seat:t.seat, zone:t.zone, tier:t.tier, email:String(t.email==null?'':t.email), phone:String(t.phone==null?'':t.phone), tconf:t.tconf||t.confirm||'', status:'Issued'});
           markBooked(t.seat, t.name);
         });
         renderRegistry();
